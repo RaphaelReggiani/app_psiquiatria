@@ -1,0 +1,20 @@
+{% extends "main.html" %}
+
+{% block body %}
+
+    <div>
+        Você precisa estar logado para acessar esta página.
+    </div>
+
+    <div>
+        <a href="{% url 'login' %}" class="text-blue-700 cursor-pointer font-semibold text-lg">
+            LOGIN
+        </a>
+    </div>
+    
+
+{% endblock body %}
+
+{% block footer %}
+
+{% endblock footer %}

@@ -1,0 +1,53 @@
+{% extends "main.html" %}
+{% load widget_tweaks %}
+
+{% block body %}
+
+<div class="min-h-screen pt-0 flex items-center justify-center">
+
+  <div class="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
+
+    <h2 class="text-3xl font-semibold text-center text-emerald-900 mb-6">
+      LOGIN
+    </h2>
+
+    {% if messages %}
+      <div class="mb-4">
+        {% for message in messages %}
+          <p class="text-red-600 font-semibold text-center">
+            {{ message }}
+          </p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="POST" class="space-y-4">
+      {% csrf_token %}
+
+      <div>
+        <label class="block text-sm font-medium text-emerald-800 mb-1">
+          E-mail
+        </label>
+
+        <input type="email" name="email" required class="block w-full rounded-md bg-white px-3 py-2 text-gray-900 border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-emerald-800 mb-1">
+          Senha
+        </label>
+
+        <input type="password" name="password" required class="block w-full rounded-md bg-white px-3 py-2 text-gray-900 border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none">
+      </div>
+
+      <button type="submit" class="w-full mt-4 bg-emerald-600 text-white py-2 rounded-md font-semibold cursor-pointer hover:bg-emerald-700 transition">
+        LOGIN
+      </button>
+
+    </form>
+
+  </div>
+
+</div>
+
+{% endblock body %}
