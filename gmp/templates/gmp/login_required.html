@@ -2,19 +2,22 @@
 
 {% block body %}
 
-    <div>
-        Você precisa estar logado para acessar esta página.
-    </div>
+<div class="min-h-screen pt-0 flex items-center justify-center">
 
-    <div>
-        <a href="{% url 'login' %}" class="text-blue-700 cursor-pointer font-semibold text-lg">
+  <div class="w-4x1 max-w-4x1 bg-white rounded-xl shadow-lg p-8">
+
+    <h2 class="text-2xl font-semibold text-center text-emerald-900 mb-8">
+        É NECESSÁRIO ESTAR LOGADO, PARA O ACESSO ÀS FUNCIONALIDADES DO SITE.
+    </h2>
+
+    <div class="flex justify-center mt-4">
+        <a href="{% url 'login' %}" class="inline-block p-4 bg-emerald-600 text-white py-2 rounded-md font-semibold cursor-pointer hover:bg-emerald-700 transition">
             LOGIN
         </a>
     </div>
-    
+
+  </div>
+
+</div>
 
 {% endblock body %}
-
-{% block footer %}
-
-{% endblock footer %}

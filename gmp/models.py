@@ -23,6 +23,12 @@ class CustomUserManager(BaseUserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
 
+        if extra_fields.get("is_staff") is not True:
+            raise ValueError("Superuser precisa ter is_staff=True.")
+
+        if extra_fields.get("is_superuser") is not True:
+            raise ValueError("Superuser precisa ter is_superuser=True.")
+
         return self.create_user(
             email=email,
             password=password,
@@ -40,7 +46,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     ]
 
     nome = models.CharField(max_length=255, blank=True, null=True)
-    email = models.EmailField(unique=True)
+    email = models.EmailField(unique=True, blank=False, null=False)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='paciente')
 
     telefone = models.CharField(max_length=20, blank=True, null=True)

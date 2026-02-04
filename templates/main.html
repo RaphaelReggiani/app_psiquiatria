@@ -21,23 +21,19 @@
         {% if request.user.is_authenticated %}
         <div class="ml-12 flex gap-12 text-sm font-semibold text-emerald-900">
 
-            <a href="{% url 'home' %}"
-               class="hover:text-emerald-600 transition">
+            <a href="{% url 'home' %}" class="hover:text-emerald-600 transition">
                 Nova consulta
             </a>
 
-            <a href="{% url 'home' %}"
-               class="hover:text-emerald-600 transition">
+            <a href="{% url 'home' %}" class="hover:text-emerald-600 transition">
                 Contato
             </a>
 
-            <a href="{% url 'home' %}"
-               class="hover:text-emerald-600 transition">
+            <a href="{% url 'home' %}" class="hover:text-emerald-600 transition">
                 Suporte
             </a>
 
-            <a href="{% url 'home' %}"
-               class="hover:text-emerald-600 transition">
+            <a href="{% url 'home' %}" class="hover:text-emerald-600 transition">
                 Sobre nós
             </a>
 
@@ -46,9 +42,11 @@
 
         <div class="relative">
 
-            {% if request.user.is_authenticated %}
+            {% if request.user.is_authenticated and request.user.is_staff %}
 
-                <button id="userMenuButton" class="flex cursor-pointer items-center gap-1 bg-white border-2 border-teal-400 rounded-xl px-3 py-1 text-sm font-semibold text-teal-700 hover:bg-teal-50">
+                <!-- MENU STAFF -->
+                <button id="userMenuButton"
+                    class="flex cursor-pointer items-center gap-1 bg-white border-2 border-teal-400 rounded-xl px-3 py-1 text-sm font-semibold text-teal-700 hover:bg-teal-50">
 
                     Bem vindo(a), {{ request.user.nome }}
 
@@ -57,11 +55,14 @@
                     </svg>
                 </button>
 
-                <div id="userDropdown"
-                     class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 text-sm z-50">
+                <div id="userDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 text-sm z-50">
+
+                    <a href="{% url 'cadastro' %}" class="block px-4 py-2 hover:bg-gray-100 text-emerald-900">
+                        Novo cadastro
+                    </a>
 
                     <a href="{% url 'home' %}" class="block px-4 py-2 hover:bg-gray-100 text-emerald-900">
-                        Minhas consultas
+                        Consultas
                     </a>
 
                     <a href="{% url 'perfil_usuario' %}" class="block px-4 py-2 hover:bg-gray-100 text-emerald-900">
@@ -77,13 +78,89 @@
 
                 </div>
 
+            {% elif request.user.is_authenticated and request.user.role == 'medico' %}
+
+                <!-- MENU MÉDICO -->
+                <button id="userMenuButton"
+                    class="flex cursor-pointer items-center gap-1 bg-white border-2 border-teal-400 rounded-xl px-3 py-1 text-sm font-semibold text-teal-700 hover:bg-teal-50">
+
+                    Bem vindo(a), {{ request.user.nome }}
+
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+
+                <div id="userDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 text-sm z-50">
+
+                    <a href="{% url 'home' %}" class="block px-4 py-2 hover:bg-gray-100 text-emerald-900">
+                        Consultas
+                    </a>
+
+                    <a href="{% url 'home' %}" class="block px-4 py-2 hover:bg-gray-100 text-emerald-900">
+                        Meus Pacientes
+                    </a>
+
+                    <a href="{% url 'perfil_usuario' %}" class="block px-4 py-2 hover:bg-gray-100 text-emerald-900">
+                        Minhas informações
+                    </a>
+
+                    <form action="{% url 'logout' %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="w-full cursor-pointer text-left px-4 py-2 hover:bg-red-100 text-red-600">
+                            Sair
+                        </button>
+                    </form>
+
+                </div>
+
+
+            {% elif request.user.is_authenticated %}
+
+                <!-- MENU USUÁRIO COMUM -->
+                <button id="userMenuButton"
+                    class="flex cursor-pointer items-center gap-1 bg-white border-2 border-teal-400 rounded-xl px-3 py-1 text-sm font-semibold text-teal-700 hover:bg-teal-50">
+
+                    Bem vindo(a), {{ request.user.nome }}
+
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+
+                <div id="userDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 text-sm z-50">
+
+                    <a href="{% url 'home' %}" class="block px-4 py-2 hover:bg-gray-100 text-emerald-900">
+                        Minhas consultas
+                    </a>
+
+                    <a href="{% url 'perfil_usuario' %}" class="block px-4 py-2 hover:bg-gray-100 text-emerald-900">
+                        Minhas informações
+                    </a>
+
+                    <form action="{% url 'logout' %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit"
+                            class="w-full cursor-pointer text-left px-4 py-2 hover:bg-red-100 text-red-600">
+                            Sair
+                        </button>
+                    </form>
+
+                </div>
+
+
             {% else %}
 
-                <a href="{% url 'cadastro' %}" class="bg-white border-2 border-teal-400 rounded-xl px-3 py-1 text-sm font-semibold text-teal-700 hover:bg-teal-50">
-                    CADASTRO / LOGIN
-                </a>
+                {% if request.resolver_match.url_name == 'home' %}
+
+                    <a href="{% url 'login' %}" class="bg-white border-2 border-teal-400 rounded-xl px-3 py-1 text-sm font-semibold text-teal-700 hover:bg-teal-50">
+                        LOGIN
+                    </a>
+
+                {% endif %}
 
             {% endif %}
+
 
         </div>
 

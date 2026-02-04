@@ -1,13 +1,109 @@
 {% extends "main.html" %}
+{% load widget_tweaks %}
 
 {% block body %}
 
-    <div>
-        Olá
-    </div>
+<div class="min-h-screen pt-2 flex items-center justify-center">
+
+  <div class="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
+
+    <h2 class="text-3xl font-semibold text-center text-emerald-900 mb-2">
+      MEU PERFIL
+    </h2>
+
+    <p class="text-center text-sm text-emerald-700 mb-6">
+      {{ request.user.email }}
+    </p>
+
+    {% if messages %}
+      <div class="mb-4">
+        {% for message in messages %}
+          <p class="{% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}text-red-600{% else %}text-green-600{% endif %} font-semibold text-center">
+            {{ message }}
+          </p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if edit_form.non_field_errors %}
+      <div class="text-red-600 mb-4 text-center">
+        {% for error in edit_form.non_field_errors %}
+          <p>{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data" class="space-y-4">
+      {% csrf_token %}
+
+      {% for field in edit_form %}
+
+        <div>
+
+          <label class="block text-sm font-medium text-emerald-800 mb-1">
+            {{ field.label }}
+          </label>
+
+          {% if field.field.widget.input_type == "file" %}
+
+            {% if request.user.foto_perfil %}
+              <div class="mb-2 ml-2 mt-2 flex justify-left">
+                <img 
+                  src="{{ request.user.foto_perfil.url }}" 
+                  class="w-24 h-24 object-cover rounded-full border-1 border-teal-500"
+                >
+              </div>
+            {% endif %}
+
+            <label for="{{ edit_form.foto_perfil.id_for_label }}" class="inline-block cursor-pointer rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition">
+              Carregar Foto
+            </label>
+
+            <input type="file" name="foto_perfil" id="{{ edit_form.foto_perfil.id_for_label }}" class="hidden">
+
+          {% else %}
+
+            {{ field|add_class:"block w-full rounded-md bg-white px-3 py-2 text-gray-900 border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" }}
+
+          {% endif %}
+
+          {% if field.help_text %}
+            <small class="text-sm text-emerald-700">
+              {{ field.help_text|safe }}
+            </small>
+          {% endif %}
+
+          {% for error in field.errors %}
+            <p class="text-red-600 text-sm mt-1">
+              {{ error }}
+            </p>
+          {% endfor %}
+
+        </div>
+
+      {% endfor %}
+
+      <button type="submit" class="w-full mt-4 bg-emerald-600 text-white py-2 cursor-pointer rounded-md font-semibold hover:bg-emerald-700 transition">
+        ATUALIZAR DADOS
+      </button>
+
+    </form>
+
+  </div>
+
+</div>
+
+<script>
+document.addEventListener("change", function(e){
+  if(e.target.type === "file"){
+    const fileName = e.target.files.length
+      ? e.target.files[0].name
+      : "";
+    e.target.closest("div").querySelector(".file-name").textContent = fileName;
+  }
+});
+</script>
 
 {% endblock body %}
 
-{% block footer %}
 
-{% endblock footer %}

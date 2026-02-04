@@ -40,6 +40,14 @@
         <input type="password" name="password" required class="block w-full rounded-md bg-white px-3 py-2 text-gray-900 border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none">
       </div>
 
+      <p class="mt-6 text-sm text-emerald-600">
+        <a href="{% url 'cadastro' %}" class="ml-2 cursor-pointer hover:underline">Ainda não é membro? CADASTRE-SE</a>
+      </p>
+
+      <p class="mt-6 text-sm text-emerald-600">
+        <a href="{% url 'pw_reset' %}" class="ml-2 cursor-pointer hover:underline">*Esqueceu a senha?</a>
+      </p>
+
       <button type="submit" class="w-full mt-4 bg-emerald-600 text-white py-2 rounded-md font-semibold cursor-pointer hover:bg-emerald-700 transition">
         LOGIN
       </button>

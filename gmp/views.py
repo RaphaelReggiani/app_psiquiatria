@@ -15,24 +15,34 @@ def home(request):
     return render(request, 'gmp/home.html')
 
 def cadastro_view(request):
-    signup_form = CustomUserCreationForm()
-    signup_submitted = False
+
+    signup_form = CustomUserCreationForm(
+        request_user=request.user if request.user.is_authenticated else None
+    )
 
     if request.method == 'POST':
-        if 'signup_submit' in request.POST:
-            signup_form = CustomUserCreationForm(request.POST, request.FILES)
-            signup_submitted = True
-            if signup_form.is_valid():
-                user = signup_form.save(commit=False)
+
+        signup_form = CustomUserCreationForm(
+            request.POST,
+            request.FILES,
+            request_user=request.user if request.user.is_authenticated else None
+        )
+
+        if signup_form.is_valid():
+            user = signup_form.save(commit=False)
+
+            if not request.user.is_authenticated:
                 user.role = 'paciente'
-                user.save()
-                messages.success(request, "Conta criada com sucesso.")
-                return redirect('login')
+
+            user.save()
+
+            messages.success(request, "Conta criada com sucesso.")
+            return redirect('login')
 
     return render(request, 'gmp/cadastro.html', {
-        'signup_form': signup_form,
-        'signup_submitted': signup_submitted
+        'signup_form': signup_form
     })
+
 
 def login_view(request):
     login_form = CustomAuthenticationForm(request=request)
@@ -71,25 +81,27 @@ def profile_view(request):
     if not request.user.is_authenticated:
         messages.error(request, "Você precisa estar logado para acessar seu perfil.")
         return redirect('login_required')
-
-    if request.method == 'POST':
-        form = CustomUserChangeForm(
-            request.POST,
-            request.FILES,
-            instance=request.user,
-            request_user=request.user
-        )
-
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Perfil atualizado.")
-            return redirect('perfil_usuario')
-
+    
     else:
-        form = CustomUserChangeForm(
-            instance=request.user,
-            request_user=request.user
-        )
+
+        if request.method == 'POST':
+            form = CustomUserChangeForm(
+                request.POST,
+                request.FILES,
+                instance=request.user,
+                request_user=request.user
+            )
+
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Perfil atualizado.")
+                return redirect('perfil_usuario')
+
+        else:
+            form = CustomUserChangeForm(
+                instance=request.user,
+                request_user=request.user
+            )
 
     return render(request, 'gmp/perfil_usuario.html', {'edit_form': form})
 
@@ -132,6 +144,6 @@ def staff_user_create(request):
     else:
         form = CustomUserCreationForm(request_user=request.user)
 
-    return render(request, 'staff.html', {
+    return render(request, 'gmp/staff.html', {
         'signup_form': form
     })

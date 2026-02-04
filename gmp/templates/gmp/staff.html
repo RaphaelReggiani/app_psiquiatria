@@ -1,13 +1,87 @@
 {% extends "main.html" %}
+{% load widget_tweaks %}
 
 {% block body %}
 
-    <div>
-        Olá
-    </div>
+<div class="min-h-screen pt-2 flex items-center justify-center">
+
+  <div class="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
+
+    <h2 class="text-3xl font-semibold text-center text-emerald-900 mb-6">
+        NOVO CADASTRO
+    </h2>
+
+    {% if messages %}
+      <div class="mb-4">
+        {% for message in messages %}
+          <p class="{% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}text-red-600{% else %}text-green-600{% endif %} font-semibold text-center">
+            {{ message }}
+          </p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if signup_form.non_field_errors %}
+      <div class="text-red-600 mb-4 text-center">
+        {% for error in signup_form.non_field_errors %}
+          <p>{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data" class="space-y-4">
+      {% csrf_token %}
+
+      {% for field in signup_form %}
+
+        <div>
+          <label class="block text-sm font-medium text-emerald-800 mb-1">{{ field.label }}</label>
+
+          {% if field.field.widget.input_type == "file" %}
+
+            <label for="{{ field.id_for_label }}" class="inline-block cursor-pointer rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition">Carregar Foto</label>
+
+            {{ field|add_class:"hidden" }}
+
+            <p id="file-name" class="mt-2 text-sm text-gray-600"></p>
+
+          {% else %}
+
+            {{ field|add_class:"block w-full rounded-md bg-white px-3 py-2 text-gray-900 border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" }}
+
+          {% endif %}
+
+          {% if field.help_text %}
+            <small class="text-sm text-emerald-700">
+              {{ field.help_text|safe }}
+            </small>
+          {% endif %}
+
+          {% for error in field.errors %}
+            <p class="text-red-600 text-sm mt-1">{{ error }}</p>
+          {% endfor %}
+
+        </div>
+
+      {% endfor %}
+
+      <button type="submit" name="signup_submit" class="w-full mt-4 bg-emerald-600 text-white py-2 cursor-pointer rounded-md font-semibold hover:bg-emerald-700 transition">
+        CADASTRAR
+      </button>
+
+    </form>
+
+  </div>
+
+</div>
+
+<script>
+document.addEventListener("change", function(e){
+  if(e.target.type === "file"){
+    const fileName = e.target.files.length ? e.target.files[0].name : "";
+    document.getElementById("file-name").textContent = fileName;
+  }
+});
+</script>
 
 {% endblock body %}
-
-{% block footer %}
-
-{% endblock footer %}

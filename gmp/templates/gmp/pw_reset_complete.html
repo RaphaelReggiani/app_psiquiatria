@@ -1,0 +1,11 @@
+{% extends "main.html" %}
+
+{% block body %}
+<div class="min-h-screen flex items-center justify-center">
+  <div class="w-full max-w-md bg-white p-8 rounded-lg shadow text-center">
+    <h2 class="text-2xl font-semibold text-emerald-800 mb-4">Senha redefinida com sucesso!</h2>
+    <p>Você já pode fazer login com sua nova senha.</p>
+    <a href="{% url 'login' %}" class="mt-6 inline-block bg-emerald-600 cursor-pointer text-white px-4 py-2 rounded hover:bg-emerald-700">Voltar ao login</a>
+  </div>
+</div>
+{% endblock body %}
