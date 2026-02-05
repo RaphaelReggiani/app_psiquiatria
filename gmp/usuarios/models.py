@@ -45,10 +45,21 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         ('superadm', 'Super Administrador'),
     ]
 
+    QUEIXA_CHOICES = [
+        ('depressao', 'Depressão'),
+        ('ansiedade', 'Ansiedade'),
+        ('tag', 'TAG'),
+        ('toc', 'TOC'),
+        ('bipolaridade', 'Bipolaridade'),
+        ('esquizofrenia', 'Esquizofrenia'),
+        ('outros', 'Outros'),
+    ]
+
     nome = models.CharField(max_length=255, blank=True, null=True)
     email = models.EmailField(unique=True, blank=False, null=False)
+    idade = models.PositiveIntegerField(blank=True, null=True)
+    queixa = models.CharField(max_length=25, choices=QUEIXA_CHOICES, default='depressao')
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='paciente')
-
     telefone = models.CharField(max_length=20, blank=True, null=True)
     origem = models.CharField(max_length=50, blank=True)
     foto_perfil = models.ImageField(upload_to='foto_perfil/', blank=True, null=True)

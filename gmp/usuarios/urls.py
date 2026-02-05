@@ -1,5 +1,5 @@
 from django.urls import path, include
-from . import views, pw_reset_views
+from . import views, pw_reset
 
 urlpatterns = [
 
@@ -11,7 +11,6 @@ urlpatterns = [
 
     # Usuário
 
-
     path('cadastro/', views.cadastro_view, name='cadastro'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
@@ -21,8 +20,8 @@ urlpatterns = [
 
     # Reset de senha
 
-    path('pw_reset/', pw_reset_views.CustomPasswordResetView.as_view(), name='pw_reset'),
-    path('pw_reset/done/', pw_reset_views.CustomPasswordResetDoneView.as_view(), name='pw_reset_done'),
-    path('reset/<uidb64>/<token>/', pw_reset_views.CustomPasswordResetConfirmView.as_view(), name='pw_reset_confirm'),
-    path('reset-complete/', pw_reset_views.CustomPasswordResetCompleteView.as_view(), name='pw_reset_complete'),
+    path('pw_reset/', pw_reset.CustomPasswordResetView.as_view(), name='pw_reset'),
+    path('pw_reset/done/', pw_reset.CustomPasswordResetDoneView.as_view(), name='pw_reset_done'),
+    path('reset/<uidb64>/<token>/', pw_reset.CustomPasswordResetConfirmView.as_view(), name='pw_reset_confirm'),
+    path('reset-complete/', pw_reset.CustomPasswordResetCompleteView.as_view(), name='pw_reset_complete'),
 ]

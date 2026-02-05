@@ -84,6 +84,34 @@ document.addEventListener("change", function(e){
 });
 </script>
 
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  const roleSelect = document.getElementById("id_role");
+  const idadeField = document.getElementById("id_idade")?.closest("div");
+  const queixaField = document.getElementById("id_queixa")?.closest("div");
+
+  function togglePacienteFields() {
+    if (!idadeField || !queixaField) return;
+
+    if (!roleSelect || roleSelect.value === "paciente") {
+      idadeField.style.display = "block";
+      queixaField.style.display = "block";
+    } else {
+      idadeField.style.display = "none";
+      queixaField.style.display = "none";
+    }
+  }
+
+  togglePacienteFields();
+
+  if (roleSelect) {
+    roleSelect.addEventListener("change", togglePacienteFields);
+  }
+
+});
+</script>
+
 {% endblock body %}
 
 

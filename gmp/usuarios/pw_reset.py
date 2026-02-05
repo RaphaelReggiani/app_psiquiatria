@@ -2,7 +2,17 @@ from django import forms
 from django.contrib.auth.forms import (
     PasswordResetForm, SetPasswordForm
 )
+from django.contrib.auth.views import (
+    PasswordResetView,
+    PasswordResetDoneView,
+    PasswordResetConfirmView,
+    PasswordResetCompleteView
+)
 from django.utils.translation import gettext_lazy as _
+
+
+class CustomPasswordResetCompleteView(PasswordResetCompleteView):
+    template_name = 'gmp/pw_reset_complete.html'
 
 
 class CustomPasswordResetForm(PasswordResetForm):
@@ -15,6 +25,7 @@ class CustomPasswordResetForm(PasswordResetForm):
             'placeholder': 'Digite seu e-mail'
         })
     )
+
 
 class CustomSetPasswordForm(SetPasswordForm):
     new_password1 = forms.CharField(
@@ -41,3 +52,20 @@ class CustomSetPasswordForm(SetPasswordForm):
             'placeholder': 'Confirme a nova senha'
         }),
     )
+
+class CustomPasswordResetView(PasswordResetView):
+    template_name = 'gmp/pw_reset.html'
+    email_template_name = 'gmp/pw_reset_email.html'
+    subject_template_name = 'gmp/pw_reset_subject.txt'
+    success_url = '/pw_reset/done/'
+    form_class = CustomPasswordResetForm
+
+
+class CustomPasswordResetDoneView(PasswordResetDoneView):
+    template_name = 'gmp/pw_reset_done.html'
+
+
+class CustomPasswordResetConfirmView(PasswordResetConfirmView):
+    template_name = 'gmp/pw_reset_confirm.html'
+    success_url = '/login/'
+    form_class = CustomSetPasswordForm

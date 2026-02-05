@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
-from .models import CustomUser
+from gmp.usuarios.models import CustomUser
 
 
 class CustomUserCreationForm(UserCreationForm):
@@ -25,7 +25,7 @@ class CustomUserCreationForm(UserCreationForm):
 
     class Meta:
         model = CustomUser
-        fields = ['nome', 'email', 'role', 'telefone', 'origem', 'foto_perfil']
+        fields = ['nome', 'email', 'idade', 'queixa', 'role', 'telefone', 'origem', 'foto_perfil']
 
     def __init__(self, *args, **kwargs):
         self.request_user = kwargs.pop('request_user', None)
@@ -33,6 +33,8 @@ class CustomUserCreationForm(UserCreationForm):
 
         self.fields['nome'].label = "Nome"
         self.fields['email'].label = "E-mail"
+        self.fields['idade'].label = "Idade"
+        self.fields['queixa'].label = "Queixa"
         self.fields['role'].label = "Perfil"
         self.fields['telefone'].label = "Telefone"
         self.fields['origem'].label = "Estado"
@@ -88,7 +90,7 @@ class CustomUserChangeForm(UserChangeForm):
 
     class Meta:
         model = CustomUser
-        fields = ['nome', 'email', 'role', 'telefone', 'origem', 'foto_perfil']
+        fields = ['nome', 'email', 'idade', 'queixa', 'role', 'telefone', 'origem', 'foto_perfil']
 
     def __init__(self, *args, **kwargs):
         self.request_user = kwargs.pop('request_user', None)
@@ -100,6 +102,8 @@ class CustomUserChangeForm(UserChangeForm):
 
         if self.request_user.role == 'medico':
             self.fields.pop('role')
+            self.fields.pop('idade')
+            self.fields.pop('queixa')
             return
 
         if self.request_user.role == 'superadm':

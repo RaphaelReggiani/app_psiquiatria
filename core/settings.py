@@ -16,6 +16,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'gmp',
+    'gmp.usuarios.apps.UsuariosConfig',
+    'gmp.consultas.apps.ConsultasConfig',
     'rest_framework',
     'widget_tweaks',
 ]
@@ -104,7 +106,7 @@ REST_FRAMEWORK = {
     ]
 }
 
-AUTH_USER_MODEL = 'gmp.CustomUser'
+AUTH_USER_MODEL = 'usuarios.CustomUser'
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/home/'
