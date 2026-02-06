@@ -7,4 +7,5 @@ from gmp.usuarios import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('gmp.usuarios.urls')),
+    path('consultas/', include('gmp.consultas.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

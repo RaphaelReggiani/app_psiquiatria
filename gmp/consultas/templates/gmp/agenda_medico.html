@@ -1,0 +1,90 @@
+{% extends "main.html" %}
+
+{% block body %}
+
+<div class="min-h-screen pt-2 flex items-center justify-center">
+
+  <div class="w-full max-w-3xl bg-white rounded-xl shadow-lg p-8">
+
+    <h2 class="text-3xl font-semibold text-center text-emerald-900 mb-6">
+      MINHA AGENDA
+    </h2>
+
+    {% if messages %}
+      <div class="mb-4">
+        {% for message in messages %}
+          <p class="text-center font-semibold
+            {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
+              text-red-600
+            {% else %}
+              text-green-600
+            {% endif %}
+          ">
+            {{ message }}
+          </p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if consultas %}
+
+      <div class="space-y-4">
+
+        {% for consulta in consultas %}
+
+          {% if consulta.data_hora > now %}
+
+            <div class="border border-emerald-300 rounded-lg p-4 flex justify-between items-center">
+
+          {% else %}
+
+            <div class="border border-gray-300 rounded-lg p-4 flex justify-between items-center opacity-50">
+
+          {% endif %}
+
+              <div>
+                <p class="font-semibold text-emerald-900">
+                  {{ consulta.data_hora|date:"d/m/Y H:i" }}
+                </p>
+
+                <p>
+                  Paciente:
+                  <a href="{% url 'historico_paciente' consulta.paciente.id %}"
+                     class="text-emerald-700 underline font-semibold">
+                    {{ consulta.paciente.nome }}
+                  </a>
+                </p>
+
+                <p>Status: {{ consulta.get_status_display }}</p>
+              </div>
+
+              <div>
+
+                {% if consulta.status == 'marcada' and consulta.data_hora <= now %}
+                  <a href="{% url 'cadastrar_consulta' consulta.id %}"
+                     class="bg-emerald-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-emerald-700 transition">
+                    Registrar Consulta
+                  </a>
+                {% endif %}
+
+              </div>
+
+            </div>
+
+        {% endfor %}
+
+      </div>
+
+    {% else %}
+
+      <p class="text-center text-gray-600">
+        Nenhuma consulta na agenda.
+      </p>
+
+    {% endif %}
+
+  </div>
+
+</div>
+
+{% endblock body %}

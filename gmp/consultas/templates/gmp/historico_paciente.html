@@ -1,0 +1,82 @@
+{% extends "main.html" %}
+
+{% block body %}
+
+<div class="min-h-screen pt-2 flex items-center justify-center">
+
+  <div class="w-full max-w-4xl bg-white rounded-xl shadow-lg p-8">
+
+    <h2 class="text-3xl font-semibold text-center text-emerald-900 mb-6">
+      HISTÓRICO DO PACIENTE
+    </h2>
+
+    {% if consultas %}
+
+      <div class="space-y-4">
+
+        {% for consulta in consultas %}
+
+          <div class="border border-emerald-300 rounded-lg p-4">
+
+            <p class="font-semibold text-emerald-900">
+              {{ consulta.data_hora|date:"d/m/Y H:i" }}
+            </p>
+
+            <p>
+              Médico:
+              <span class="font-semibold">
+                {{ consulta.medico.nome }}
+              </span>
+            </p>
+
+            {% if consulta.consulta %}
+              <p>
+                Condição:
+                {{ consulta.consulta.get_condicao_paciente_display }}
+              </p>
+
+              <p class="mt-2">
+                <span class="font-semibold">Descrição:</span><br>
+                {{ consulta.consulta.descricao }}
+              </p>
+
+              {% if consulta.consulta.receita %}
+                <p class="mt-2">
+                  <a href="{{ consulta.consulta.receita.url }}"
+                     target="_blank"
+                     class="text-emerald-700 underline font-semibold">
+                    Ver Receita
+                  </a>
+                </p>
+              {% endif %}
+
+              {% if consulta.consulta.arquivo %}
+                <p>
+                  <a href="{{ consulta.consulta.arquivo.url }}"
+                     target="_blank"
+                     class="text-emerald-700 underline font-semibold">
+                    Ver Arquivo
+                  </a>
+                </p>
+              {% endif %}
+            {% endif %}
+
+          </div>
+
+        {% endfor %}
+
+      </div>
+
+    {% else %}
+
+      <p class="text-center text-gray-600">
+        Nenhuma consulta realizada para este paciente.
+      </p>
+
+    {% endif %}
+
+  </div>
+
+</div>
+
+{% endblock body %}

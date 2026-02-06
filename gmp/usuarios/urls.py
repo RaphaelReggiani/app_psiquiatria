@@ -3,8 +3,6 @@ from . import views, pw_reset
 
 urlpatterns = [
 
-    # path('tickets/', include('helpdesk.tickets.ticket_urls')),
-
     # HOME
 
     path('home/', views.home, name="home"),
