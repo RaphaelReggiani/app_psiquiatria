@@ -116,3 +116,14 @@ LOGOUT_REDIRECT_URL = '/login/'
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
+
+DEFAULT_FROM_EMAIL = 'gmp@gmp.com'
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+EMAIL_HOST = 'smtp.gmp.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+EMAIL_HOST_USER = 'gmp@gmp.com'
+EMAIL_HOST_PASSWORD = 'SENHA_DE_APP'

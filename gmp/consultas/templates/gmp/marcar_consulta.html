@@ -3,9 +3,9 @@
 
 {% block body %}
 
-<div class="min-h-screen pt-2 flex items-center justify-center">
+<div class="min-h-screen pt-6 flex items-center justify-center">
 
-  <div class="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
+  <div class="w-full max-w-xl bg-white rounded-xl shadow-lg p-10">
 
     <h2 class="text-3xl font-semibold text-center text-emerald-900 mb-6">
       NOVA CONSULTA
@@ -29,37 +29,28 @@
       </div>
     {% endif %}
 
-    <form method="POST" class="space-y-4">
+    <form method="POST" class="space-y-6">
       {% csrf_token %}
 
+      <div>
+        <h2 class="block text-xl font-medium text-emerald-700">
+          Olá {{ user.nome|upper }}, selecione o médico, a data e o horário:
+        </h2>
+      </div>
 
-      {% if paciente_logado %}
-        <div>
-          <label class="block text-sm font-medium text-emerald-800 mb-1">
-            Paciente
-          </label>
+      {% if user.role != 'paciente' %}
+      <div>
+        <label class="block text-sm font-medium text-emerald-800 mb-1">
+          {{ form.paciente.label }}
+        </label>
 
-          <input
-            type="text"
-            value="{{ paciente_logado.nome }}"
-            disabled
-            class="block w-full rounded-md bg-gray-100 px-3 py-2 text-gray-700 border border-gray-300"
-          >
-        </div>
-      {% else %}
-        <div>
-          <label class="block text-sm font-medium text-emerald-800 mb-1">
-            {{ form.paciente.label }}
-          </label>
+        {{ form.paciente|add_class:"block w-full rounded-md bg-white px-3 py-2 text-gray-900 border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" }}
 
-          {{ form.paciente|add_class:"block w-full rounded-md bg-white px-3 py-2 text-gray-900 border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" }}
-
-          {% for error in form.paciente.errors %}
-            <p class="text-red-600 text-sm mt-1">{{ error }}</p>
-          {% endfor %}
-        </div>
+        {% for error in form.paciente.errors %}
+          <p class="text-red-600 text-sm mt-1">{{ error }}</p>
+        {% endfor %}
+      </div>
       {% endif %}
-
 
       <div>
         <label class="block text-sm font-medium text-emerald-800 mb-1">
@@ -73,23 +64,21 @@
         {% endfor %}
       </div>
 
+      <div>
+        <label class="block text-sm font-medium text-emerald-800 mb-1">
+          {{ form.data.label }}
+        </label>
+        {{ form.data|add_class:"block w-full rounded-md bg-white px-3 py-2 text-gray-900 border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" }}
+      </div>
 
       <div>
         <label class="block text-sm font-medium text-emerald-800 mb-1">
-          {{ form.data_hora.label }}
+          {{ form.hora.label }}
         </label>
-
-        {{ form.data_hora|add_class:"block w-full rounded-md bg-white px-3 py-2 text-gray-900 border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" }}
-
-        {% for error in form.data_hora.errors %}
-          <p class="text-red-600 text-sm mt-1">{{ error }}</p>
-        {% endfor %}
+        {{ form.hora|add_class:"block w-full rounded-md bg-white px-3 py-2 text-gray-900 border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" }}
       </div>
 
-      <button
-        type="submit"
-        class="w-full mt-4 bg-emerald-600 text-white py-2 cursor-pointer rounded-md font-semibold hover:bg-emerald-700 transition"
-      >
+      <button type="submit" class="w-full mt-6 bg-emerald-600 text-white py-2 cursor-pointer rounded-md font-semibold hover:bg-emerald-700 transition">
         MARCAR CONSULTA
       </button>
 
@@ -99,5 +88,51 @@
 
 </div>
 
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const dataInput = document.getElementById("id_data");
+  const horaSelect = document.getElementById("id_hora");
+
+  function atualizarHorarios() {
+    const hoje = new Date();
+    const dataSelecionada = new Date(dataInput.value + "T00:00");
+
+    let primeiroValido = null;
+
+    [...horaSelect.options].forEach(option => {
+      const [h, m] = option.value.split(":").map(Number);
+      const dataHora = new Date(dataSelecionada);
+      dataHora.setHours(h, m, 0, 0);
+
+      if (dataHora < hoje) {
+        option.style.display = "none";;
+      } else {
+        option.style.display = "block";
+        if (!primeiroValido) primeiroValido = option;
+      }
+    });
+
+    if (primeiroValido) {
+      horaSelect.value = primeiroValido.value;
+    }
+  }
+
+  dataInput.addEventListener("change", atualizarHorarios);
+});
+</script>
+
+<script>
+document.getElementById("id_data").addEventListener("change", function () {
+  const data = new Date(this.value);
+  const dia = data.getDay();
+
+  if (dia === 0 || dia === 6) {
+    alert("Consultas não são permitidas aos finais de semana.");
+    this.value = "";
+  }
+});
+</script>
+
 {% endblock body %}
+
 

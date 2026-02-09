@@ -11,7 +11,6 @@
       REGISTRAR CONSULTA
     </h2>
 
-    <!-- INFO PACIENTE -->
     <div class="flex items-center gap-4 mb-6 border border-emerald-300 rounded-lg p-4">
 
       {% if paciente.foto_perfil %}
@@ -31,8 +30,7 @@
         <p>Idade: {{ paciente.idade }}</p>
         <p>Queixa: {{ paciente.get_queixa_display }}</p>
 
-        <a href="{% url 'historico_paciente' paciente.id %}"
-           class="text-emerald-700 underline font-semibold">
+        <a href="{% url 'historico_paciente' paciente.id %}" class="text-emerald-700 underline font-semibold">
           Ver histórico
         </a>
       </div>
@@ -60,8 +58,7 @@
 
           {% if field.field.widget.input_type == "file" %}
 
-            <label for="{{ field.id_for_label }}"
-              class="inline-block cursor-pointer rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition">
+            <label for="{{ field.id_for_label }}" class="inline-block cursor-pointer rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition">
               Selecionar Arquivo
             </label>
 
@@ -81,8 +78,7 @@
 
       {% endfor %}
 
-      <button type="submit"
-        class="w-full mt-4 bg-emerald-600 text-white py-2 cursor-pointer rounded-md font-semibold hover:bg-emerald-700 transition">
+      <button type="submit" class="w-full mt-4 bg-emerald-600 text-white py-2 cursor-pointer rounded-md font-semibold hover:bg-emerald-700 transition">
         SALVAR CONSULTA
       </button>
 
