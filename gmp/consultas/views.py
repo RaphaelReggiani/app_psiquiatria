@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from datetime import time, timedelta, datetime
 from django.core.mail import send_mail
 from django.conf import settings
+from django.utils.timezone import localdate
 
 from .models import AgendamentoConsulta, Consulta
 from .forms import AgendamentoConsultaForm, ConsultaForm
@@ -23,6 +24,9 @@ def medico_ou_superadmin(user):
 @login_required
 def marcar_consulta(request):
 
+    if request.user.role == 'medico':
+        raise PermissionDenied
+
     if not paciente_ou_superadmin(request.user):
         raise PermissionDenied
 
@@ -35,8 +39,17 @@ def marcar_consulta(request):
         if form.is_valid():
             agendamento = form.save(commit=False)
 
-            if request.user.role == 'paciente':
-                agendamento.paciente = request.user
+        if request.user.role == 'paciente':
+            agendamento.paciente = request.user
+
+        elif request.user.role == 'superadm':
+            if agendamento.paciente is None:
+                messages.error(request, "Selecione um paciente.")
+                return render(
+                    request,
+                    'gmp/marcar_consulta.html',
+                    {'form': form}
+                )
 
             agendamento.save()
 
@@ -69,7 +82,7 @@ def horarios_disponiveis(request):
     minimo = agora + timedelta(hours=2)
 
     horarios = []
-    for h in range(8, 18):
+    for h in range(8, 21):
         for m in (0, 30):
             dt = timezone.make_aware(datetime.combine(data, time(h, m)))
             if dt >= minimo:
@@ -96,15 +109,21 @@ def agenda_medico(request):
     if not medico_ou_superadmin(request.user):
         raise PermissionDenied
 
+    hoje = localdate()
+
     if request.user.role == 'medico':
         consultas = AgendamentoConsulta.objects.filter(
-            medico=request.user
-        )
+            medico=request.user,
+            data_hora__gte=timezone.now()
+        ).order_by('data_hora')
     else:
-        consultas = AgendamentoConsulta.objects.all()
+        consultas = AgendamentoConsulta.objects.filter(
+            data_hora__date=hoje
+        )
 
     return render(request, 'gmp/agenda_medico.html', {
         'consultas': consultas,
+        'hoje': hoje,
         'now': timezone.now()
     })
 
@@ -191,6 +210,7 @@ def cadastrar_consulta(request, agendamento_id):
         'paciente': agendamento.paciente
     })
 
+
 @login_required
 def cancelar_consulta(request, consulta_id):
 
@@ -200,10 +220,13 @@ def cancelar_consulta(request, consulta_id):
         status='marcada'
     )
 
+    if request.user.role == 'medico' and consulta.medico != request.user:
+        raise PermissionDenied
+
     if request.user.role == 'paciente' and consulta.paciente != request.user:
         raise PermissionDenied
 
-    if consulta.data_hora < timezone.now():
+    if consulta.data_hora <= timezone.now():
         messages.error(request, "Não é possível cancelar consultas passadas.")
         return redirect('minhas_consultas')
 
@@ -211,4 +234,8 @@ def cancelar_consulta(request, consulta_id):
     consulta.save()
 
     messages.success(request, "Consulta cancelada com sucesso.")
+
+    if request.user.role == 'medico':
+        return redirect('agenda_medico')
+
     return redirect('minhas_consultas')

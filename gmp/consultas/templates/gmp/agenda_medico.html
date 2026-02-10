@@ -32,44 +32,54 @@
 
         {% for consulta in consultas %}
 
-          {% if consulta.data_hora > now %}
+          <div class="border border-emerald-300 rounded-lg p-4 flex justify-between items-start
+                      {% if consulta.data_hora <= now %} opacity-50 {% endif %}
+                      hover:bg-emerald-50 transition">
 
-            <div class="border border-emerald-300 rounded-lg p-4 flex justify-between items-center">
+            <!-- INFORMAÇÕES DA CONSULTA -->
+            <div class="space-y-1">
 
-          {% else %}
+              <p class="font-semibold text-emerald-900">
+                {{ consulta.data_hora|date:"d/m/Y H:i" }}
+              </p>
 
-            <div class="border border-gray-300 rounded-lg p-4 flex justify-between items-center opacity-50">
+              <p>
+                Paciente:
+                <a href="{% url 'historico_paciente' consulta.paciente.id %}"
+                   class="text-emerald-700 underline font-semibold">
+                  {{ consulta.paciente.nome }}
+                </a>
+              </p>
 
-          {% endif %}
-
-              <div>
-                <p class="font-semibold text-emerald-900">
-                  {{ consulta.data_hora|date:"d/m/Y H:i" }}
-                </p>
-
-                <p>
-                  Paciente:
-                  <a href="{% url 'historico_paciente' consulta.paciente.id %}"
-                     class="text-emerald-700 underline font-semibold">
-                    {{ consulta.paciente.nome }}
-                  </a>
-                </p>
-
-                <p>Status: {{ consulta.get_status_display }}</p>
-              </div>
-
-              <div>
-
-                {% if consulta.status == 'marcada' and consulta.data_hora <= now %}
-                  <a href="{% url 'cadastrar_consulta' consulta.id %}"
-                     class="bg-emerald-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-emerald-700 transition">
-                    Registrar Consulta
-                  </a>
-                {% endif %}
-
-              </div>
+              <p>Status: {{ consulta.get_status_display }}</p>
 
             </div>
+
+            <!-- AÇÕES DO MÉDICO -->
+            <div class="flex flex-col gap-2 text-right">
+
+              {% if consulta.status == 'marcada' %}
+
+                <a href="{% url 'cadastrar_consulta' consulta.id %}"
+                   class="bg-emerald-600 text-white px-4 py-2 rounded-md
+                          font-semibold hover:bg-emerald-700 transition text-sm">
+                  Registrar consulta
+                </a>
+
+                <form method="post"
+                      action="{% url 'cancelar_consulta' consulta.id %}">
+                  {% csrf_token %}
+                  <button type="submit"
+                          class="text-sm mt-3 mr-2 text-red-600 cursor-pointer font-semibold hover:underline">
+                    Cancelar consulta
+                  </button>
+                </form>
+
+              {% endif %}
+
+            </div>
+
+          </div>
 
         {% endfor %}
 
@@ -88,3 +98,4 @@
 </div>
 
 {% endblock body %}
+

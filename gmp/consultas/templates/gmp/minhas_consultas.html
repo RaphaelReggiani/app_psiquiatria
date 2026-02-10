@@ -1,4 +1,5 @@
 {% extends "main.html" %}
+{% load tz %}
 
 {% block body %}
 
@@ -17,13 +18,9 @@
         {% for consulta in consultas %}
 
           {% if consulta.data_hora > now %}
-
             <div class="border border-emerald-300 rounded-lg p-4 flex justify-between items-center">
-
           {% else %}
-
             <div class="border border-gray-300 rounded-lg p-4 flex justify-between items-center opacity-50">
-
           {% endif %}
 
               <div>
@@ -40,6 +37,19 @@
 
                 <p>Status: {{ consulta.get_status_display }}</p>
               </div>
+
+              {% if consulta.status == 'marcada' and consulta.data_hora > now and user.role == 'paciente' %}
+                <form method="POST" action="{% url 'cancelar_consulta' consulta.id %}">
+                  {% csrf_token %}
+                  <button
+                    type="submit"
+                    class="bg-red-600 cursor-pointer hover:bg-red-700 text-white px-4 py-2 rounded-lg transition"
+                    onclick="return confirm('Tem certeza que deseja cancelar esta consulta?')"
+                  >
+                    Cancelar
+                  </button>
+                </form>
+              {% endif %}
 
             </div>
 
@@ -60,3 +70,4 @@
 </div>
 
 {% endblock body %}
+

@@ -10,7 +10,7 @@ User = settings.AUTH_USER_MODEL
 
 HORARIOS_ATENDIMENTO = [
     time(h, m)
-    for h in range(8, 18)
+    for h in range(8, 21)
     for m in (0, 30)
 ]
 
@@ -57,10 +57,18 @@ class AgendamentoConsultaForm(forms.ModelForm):
 
         cleaned = super().clean()
 
+        if self.user and self.user.role == 'medico':
+            raise forms.ValidationError(
+                "Médicos não podem marcar consultas."
+            )
+
         data = cleaned.get('data')
         hora_str = cleaned.get('hora')
         medico = cleaned.get('medico')
         paciente = cleaned.get('paciente')
+
+        if not paciente and self.user and self.user.role == 'paciente':
+            paciente = self.user
 
         if not data or not hora_str or not medico:
             raise forms.ValidationError("Preencha todos os campos.")
@@ -70,7 +78,7 @@ class AgendamentoConsultaForm(forms.ModelForm):
                 "Consultas não são permitidas aos finais de semana."
             )
         
-        limite_diario = 10
+        limite_diario = 9
 
         total = AgendamentoConsulta.objects.filter(
             medico=medico,

@@ -76,6 +76,7 @@
           {{ form.hora.label }}
         </label>
         {{ form.hora|add_class:"block w-full rounded-md bg-white px-3 py-2 text-gray-900 border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" }}
+        <p id="hora-feedback" class="text-sm mt-1 hidden"></p>
       </div>
 
       <button type="submit" class="w-full mt-6 bg-emerald-600 text-white py-2 cursor-pointer rounded-md font-semibold hover:bg-emerald-700 transition">
@@ -90,36 +91,80 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+  const medicoSelect = document.getElementById("id_medico");
   const dataInput = document.getElementById("id_data");
   const horaSelect = document.getElementById("id_hora");
+  const feedback = document.getElementById("hora-feedback");
 
-  function atualizarHorarios() {
-    const hoje = new Date();
-    const dataSelecionada = new Date(dataInput.value + "T00:00");
+  function limparHorarios() {
+    horaSelect.innerHTML = "";
+    const option = document.createElement("option");
+    option.text = "Selecione um horário";
+    option.value = "";
+    horaSelect.appendChild(option);
+  }
 
-    let primeiroValido = null;
+  function mostrarMensagem(texto, erro = false) {
+    feedback.textContent = texto;
+    feedback.classList.remove("hidden");
+    feedback.classList.toggle("text-red-600", erro);
+    feedback.classList.toggle("text-emerald-600", !erro);
+  }
 
-    [...horaSelect.options].forEach(option => {
-      const [h, m] = option.value.split(":").map(Number);
-      const dataHora = new Date(dataSelecionada);
-      dataHora.setHours(h, m, 0, 0);
+  function ocultarMensagem() {
+    feedback.classList.add("hidden");
+  }
 
-      if (dataHora < hoje) {
-        option.style.display = "none";;
-      } else {
-        option.style.display = "block";
-        if (!primeiroValido) primeiroValido = option;
+  async function carregarHorarios() {
+    const medico = medicoSelect.value;
+    const data = dataInput.value;
+
+    limparHorarios();
+    ocultarMensagem();
+
+    if (!medico || !data) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `{% url 'horarios_disponiveis' %}?medico=${medico}&data=${data}`
+      );
+
+      const horarios = await response.json();
+
+      if (horarios.length === 0) {
+        mostrarMensagem(
+          "Nenhum horário disponível para esta data.",
+          true
+        );
+        return;
       }
-    });
 
-    if (primeiroValido) {
-      horaSelect.value = primeiroValido.value;
+      horarios.forEach(hora => {
+        const option = document.createElement("option");
+        option.value = hora;
+        option.text = hora;
+        horaSelect.appendChild(option);
+      });
+
+      mostrarMensagem(
+        `${horarios.length} horário(s) disponível(is).`
+      );
+
+    } catch (error) {
+      mostrarMensagem(
+        "Erro ao carregar horários. Tente novamente.",
+        true
+      );
     }
   }
 
-  dataInput.addEventListener("change", atualizarHorarios);
+  medicoSelect.addEventListener("change", carregarHorarios);
+  dataInput.addEventListener("change", carregarHorarios);
 });
 </script>
+
 
 <script>
 document.getElementById("id_data").addEventListener("change", function () {
