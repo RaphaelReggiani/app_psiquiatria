@@ -18,7 +18,9 @@
         {% for consulta in consultas %}
 
           {% if consulta.data_hora > now %}
-            <div class="border border-emerald-300 rounded-lg p-4 flex justify-between items-center">
+            <div class="border border-emerald-300 rounded-lg p-4 flex justify-between items-center
+              {% if consulta.status == 'cancelada' %} border-red-300 bg-red-50 {% endif %}
+              {% if consulta.status == 'realizada' %} border-gray-500 bg-gray-200 {% endif %}">
           {% else %}
             <div class="border border-gray-300 rounded-lg p-4 flex justify-between items-center opacity-50">
           {% endif %}

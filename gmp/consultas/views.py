@@ -8,10 +8,15 @@ from datetime import time, timedelta, datetime
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils.timezone import localdate
+from django.db import transaction
+from django.db.models import Q
 
-from .models import AgendamentoConsulta, Consulta
+from .models import AgendamentoConsulta, Consulta, ConsultaLog
+from django.contrib.auth import get_user_model
 from .forms import AgendamentoConsultaForm, ConsultaForm
 
+
+User = get_user_model()
 
 def paciente_ou_superadmin(user):
     return user.is_authenticated and user.role in ['paciente', 'superadm']
@@ -39,22 +44,27 @@ def marcar_consulta(request):
         if form.is_valid():
             agendamento = form.save(commit=False)
 
-        if request.user.role == 'paciente':
-            agendamento.paciente = request.user
+            if request.user.role == 'paciente':
+                agendamento.paciente = request.user
 
-        elif request.user.role == 'superadm':
-            if agendamento.paciente is None:
-                messages.error(request, "Selecione um paciente.")
-                return render(
-                    request,
-                    'gmp/marcar_consulta.html',
-                    {'form': form}
+            elif request.user.role == 'superadm':
+                if agendamento.paciente is None:
+                    messages.error(request, "Selecione um paciente.")
+                    return render(request, 'gmp/marcar_consulta.html', {'form': form})
+                
+            with transaction.atomic():
+                
+                agendamento.save()
+                    
+                ConsultaLog.objects.create(
+                    consulta=agendamento,
+                    usuario=request.user,
+                    status_anterior='-',
+                    status_novo='marcada'
                 )
 
-            agendamento.save()
-
-            messages.success(request, "Consulta marcada com sucesso.")
-            return redirect('minhas_consultas')
+                messages.success(request, "Consulta marcada com sucesso.")
+                return redirect('minhas_consultas')
         
     else:
         form = AgendamentoConsultaForm(user=request.user)
@@ -109,22 +119,54 @@ def agenda_medico(request):
     if not medico_ou_superadmin(request.user):
         raise PermissionDenied
 
+    AgendamentoConsulta.atualizar_consultas_expiradas()
+
     hoje = localdate()
 
+    consultas = AgendamentoConsulta.objects.filter(
+        data_hora__gte=timezone.now()
+    )
+
     if request.user.role == 'medico':
-        consultas = AgendamentoConsulta.objects.filter(
-            medico=request.user,
-            data_hora__gte=timezone.now()
-        ).order_by('data_hora')
-    else:
-        consultas = AgendamentoConsulta.objects.filter(
-            data_hora__date=hoje
+        consultas = consultas.filter(medico=request.user)
+
+    data = request.GET.get('data')
+    paciente_id = request.GET.get('paciente_id')
+    queixa = request.GET.get('queixa')
+    queixas_choices = User.QUEIXA_CHOICES
+
+    if data:
+        consultas = consultas.filter(data_hora__date=data)
+
+    if paciente_id:
+        consultas = consultas.filter(paciente_id=paciente_id)
+
+    if queixa:
+        consultas = consultas.filter(
+            paciente__queixa=queixa
         )
+
+    consultas = consultas.order_by('data_hora')
+
+    if (data or paciente_id or queixa) and not consultas.exists():
+        messages.info(
+            request,
+            "Não há consultas registradas com estes parâmetros."
+        )
+
+    if request.user.role == 'medico':
+        pacientes = User.objects.filter(
+            consultas_como_paciente__medico=request.user
+        ).only('id', 'nome').distinct()
+    else:
+        pacientes = User.objects.none()
 
     return render(request, 'gmp/agenda_medico.html', {
         'consultas': consultas,
         'hoje': hoje,
-        'now': timezone.now()
+        'now': timezone.now(),
+        'pacientes': pacientes,
+        'queixas_choices': queixas_choices,
     })
 
 
@@ -133,6 +175,8 @@ def minhas_consultas(request):
 
     if request.user.role != 'paciente':
         raise PermissionDenied
+    
+    AgendamentoConsulta.atualizar_consultas_expiradas()
 
     consultas = AgendamentoConsulta.objects.filter(
         paciente=request.user
@@ -179,27 +223,39 @@ def cadastrar_consulta(request, agendamento_id):
         form = ConsultaForm(request.POST, request.FILES)
 
         if form.is_valid():
-            consulta = form.save(commit=False)
-            consulta.agendamento = agendamento
-            consulta.save()
+                
+            with transaction.atomic():
+                
+                consulta = form.save(commit=False)
+                consulta.agendamento = agendamento
+                consulta.save()
 
-            agendamento.status = 'realizada'
-            agendamento.save()
+                status_anterior = agendamento.status
 
-            send_mail(
-                subject='Consulta confirmada',
-                message=(
-                    f"Sua consulta foi marcada para "
-                    f"{agendamento.data_hora.strftime('%d/%m/%Y %H:%M')} "
-                    f"com o médico {agendamento.medico.nome}."
-                ),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[agendamento.paciente.email],
-                fail_silently=True,
-            )
+                agendamento.status = 'realizada'
+                agendamento.save()
 
-            messages.success(request, "Consulta registrada com sucesso.")
-            return redirect('agenda_medico')
+                ConsultaLog.objects.create(
+                    consulta=agendamento,
+                    usuario=request.user,
+                    status_anterior=status_anterior,
+                    status_novo='realizada'
+                )
+
+                send_mail(
+                    subject='Consulta confirmada',
+                    message=(
+                        f"Sua consulta foi marcada para "
+                        f"{agendamento.data_hora.strftime('%d/%m/%Y %H:%M')} "
+                        f"com o médico {agendamento.medico.nome}."
+                    ),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[agendamento.paciente.email],
+                    fail_silently=True,
+                )
+
+                messages.success(request, "Consulta registrada com sucesso.")
+                return redirect('agenda_medico')
 
     else:
         form = ConsultaForm()
@@ -228,10 +284,25 @@ def cancelar_consulta(request, consulta_id):
 
     if consulta.data_hora <= timezone.now():
         messages.error(request, "Não é possível cancelar consultas passadas.")
+
+        if request.user.role == 'medico':
+            return redirect('agenda_medico')
+
         return redirect('minhas_consultas')
+    
+    
+    status_anterior = consulta.status
 
     consulta.status = 'cancelada'
+    consulta.cancelado_por = request.user
     consulta.save()
+
+    ConsultaLog.objects.create(
+        consulta=consulta,
+        usuario=request.user,
+        status_anterior=status_anterior,
+        status_novo='cancelada'
+    )
 
     messages.success(request, "Consulta cancelada com sucesso.")
 

@@ -1,6 +1,8 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from datetime import timedelta
+from django.db import transaction
 import uuid
 
 
@@ -13,6 +15,7 @@ class AgendamentoConsulta(models.Model):
         ('marcada', 'Marcada'),
         ('realizada', 'Realizada'),
         ('cancelada', 'Cancelada'),
+        ('nao_realizada', 'Não Realizada'),
     ]
 
     paciente = models.ForeignKey(
@@ -35,17 +38,56 @@ class AgendamentoConsulta(models.Model):
         default='marcada'
     )
 
+    cancelado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='cancelamentos_realizados'
+    )
+
     criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+    cancelado_em = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.data_hora} - {self.medico} - {self.paciente}"
+
+    def save(self, *args, **kwargs):
+        if self.status == 'cancelada' and not self.cancelado_em:
+            self.cancelado_em = timezone.now()
+
+        super().save(*args, **kwargs)
 
     class Meta:
         unique_together = [
             ('medico', 'data_hora'),
             ('paciente', 'data_hora')
         ]
-        ordering = ['data_hora']
+        ordering = ['-data_hora']
 
-    def __str__(self):
-        return f"{self.data_hora} - {self.medico} - {self.paciente}"
+    @classmethod
+    def atualizar_consultas_expiradas(cls):
+        agora = timezone.now()
+        limite = agora - timedelta(hours=2)
+
+        consultas_expiradas = cls.objects.filter(
+            status='marcada',
+            data_hora__lt=limite
+        ).select_related('paciente', 'medico')
+
+        for consulta in consultas_expiradas:
+            with transaction.atomic():
+                status_anterior = consulta.status
+                consulta.status = 'nao_realizada'
+                consulta.save()
+
+                ConsultaLog.objects.create(
+                    consulta=consulta,
+                    usuario=None,
+                    status_anterior=status_anterior,
+                    status_novo='nao_realizada'
+                )
 
 
 class Consulta(models.Model):
@@ -91,3 +133,26 @@ class Consulta(models.Model):
 
     def __str__(self):
         return f"[{self.protocolo}] {self.agendamento}"
+    
+
+class ConsultaLog(models.Model):
+
+    consulta = models.ForeignKey(
+        AgendamentoConsulta,
+        on_delete=models.CASCADE,
+        related_name='logs'
+    )
+
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True
+    )
+
+    status_anterior = models.CharField(max_length=15)
+    status_novo = models.CharField(max_length=15)
+
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.consulta} - {self.status_anterior} → {self.status_novo}"

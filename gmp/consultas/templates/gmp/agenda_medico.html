@@ -30,13 +30,60 @@
 
       <div class="space-y-4">
 
+        <form method="get" class="mb-6 grid grid-cols-1 md:grid-cols-4 cursor-pointer gap-4">
+
+          <input type="date"
+                name="data"
+                value="{{ request.GET.data }}"
+                class="border rounded-md p-2 text-sm">
+
+          <select name="paciente_id"
+                  class="border rounded-md p-2 text-sm">
+
+              <option value="">Paciente</option>
+
+              {% for p in pacientes %}
+                  <option value="{{ p.id }}"
+                      {% if request.GET.paciente_id == p.id|stringformat:"s" %}
+                          selected
+                      {% endif %}
+                  >
+                      {{ p.nome }}
+                  </option>
+              {% endfor %}
+          </select>
+
+          <select name="queixa"
+                  class="border rounded-md p-2 text-sm">
+
+              <option value="">Queixa</option>
+
+              {% for value, label in queixas_choices %}
+                  <option value="{{ value }}"
+                      {% if request.GET.queixa == value %}
+                          selected
+                      {% endif %}
+                  >
+                      {{ label }}
+                  </option>
+              {% endfor %}
+
+          </select>
+
+          <button type="submit"
+                  class="cursor-pointer bg-emerald-600 text-white rounded-md px-4 py-2 text-sm font-semibold hover:bg-emerald-700 transition">
+            Filtrar
+          </button>
+
+        </form>
+
         {% for consulta in consultas %}
 
-          <div class="border border-emerald-300 rounded-lg p-4 flex justify-between items-start
-                      {% if consulta.data_hora <= now %} opacity-50 {% endif %}
+          <div class="border border-emerald-300 rounded-lg p-4 flex justify-between items-start cursor-pointer
+                      {% if consulta.status == 'cancelada' %} border-red-300 bg-red-50 hover:bg-red-100 transition {% endif %}
+                      {% if consulta.status == 'realizada' %} border-gray-500 bg-gray-200 hover:bg-gray-300 transition {% endif %}
+                      {% if consulta.data_hora <= now %} text-gray-100 border-gray-100 bg-gray-50 {% endif %}
                       hover:bg-emerald-50 transition">
-
-            <!-- INFORMAÇÕES DA CONSULTA -->
             <div class="space-y-1">
 
               <p class="font-semibold text-emerald-900">
@@ -53,9 +100,19 @@
 
               <p>Status: {{ consulta.get_status_display }}</p>
 
+              {% if consulta.status == 'cancelada' and consulta.cancelado_por %}
+                  
+                  {% if user.role == 'medico' or user.role == 'superadm' %}
+                      <p class="text-sm text-red-600 mt-1">
+                          Cancelada por {{ consulta.cancelado_por.nome }}
+                          em {{ consulta.cancelado_em|date:"d/m/Y H:i" }}
+                      </p>
+                  {% endif %}
+
+              {% endif %}
+
             </div>
 
-            <!-- AÇÕES DO MÉDICO -->
             <div class="flex flex-col gap-2 text-right">
 
               {% if consulta.status == 'marcada' %}
