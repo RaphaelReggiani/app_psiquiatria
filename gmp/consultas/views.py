@@ -10,6 +10,7 @@ from django.conf import settings
 from django.utils.timezone import localdate
 from django.db import transaction
 from django.db.models import Q
+from django.core.paginator import Paginator
 
 from .models import AgendamentoConsulta, Consulta, ConsultaLog
 from django.contrib.auth import get_user_model
@@ -134,6 +135,8 @@ def agenda_medico(request):
     paciente_id = request.GET.get('paciente_id')
     queixa = request.GET.get('queixa')
     queixas_choices = User.QUEIXA_CHOICES
+    status = request.GET.get('status')
+    status_choices = AgendamentoConsulta.STATUS_CHOICES
 
     if data:
         consultas = consultas.filter(data_hora__date=data)
@@ -145,6 +148,9 @@ def agenda_medico(request):
         consultas = consultas.filter(
             paciente__queixa=queixa
         )
+
+    if status:
+        consultas = consultas.filter(status=status)
 
     consultas = consultas.order_by('data_hora')
 
@@ -167,6 +173,7 @@ def agenda_medico(request):
         'now': timezone.now(),
         'pacientes': pacientes,
         'queixas_choices': queixas_choices,
+        'status_choices': status_choices,
     })
 
 
@@ -180,13 +187,16 @@ def minhas_consultas(request):
 
     consultas = AgendamentoConsulta.objects.filter(
         paciente=request.user
-    )
+    ).order_by('-data_hora')
+
+    paginator = Paginator(consultas, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     return render(request, 'gmp/minhas_consultas.html', {
-        'consultas': consultas,
+        'page_obj': page_obj,
         'now': timezone.now()
     })
-
 
 @login_required
 def historico_paciente(request, paciente_id):
@@ -310,3 +320,110 @@ def cancelar_consulta(request, consulta_id):
         return redirect('agenda_medico')
 
     return redirect('minhas_consultas')
+
+
+@login_required
+def historico_medico_consultas(request):
+
+    if not medico_ou_superadmin(request.user):
+        raise PermissionDenied
+
+    consultas = AgendamentoConsulta.objects.filter(
+        medico=request.user,
+        status='realizada'
+    ).order_by('-data_hora')
+
+    data = request.GET.get('data')
+    paciente_id = request.GET.get('paciente_id')
+    queixa = request.GET.get('queixa')
+
+    if data:
+        consultas = consultas.filter(data_hora__date=data)
+
+    if paciente_id:
+        consultas = consultas.filter(paciente_id=paciente_id)
+
+    if queixa:
+        consultas = consultas.filter(
+            paciente__queixa=queixa
+        )
+
+    pacientes = User.objects.filter(
+        consultas_como_paciente__medico=request.user,
+        consultas_como_paciente__status='realizada'
+    ).distinct().only('id', 'nome')
+
+    queixas_choices = User.QUEIXA_CHOICES
+
+    if (data or paciente_id or queixa) and not consultas.exists():
+        messages.info(
+            request,
+            "Não há consultas registradas com estes parâmetros."
+        )
+
+    paginator = Paginator(consultas, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'gmp/historico_medico_consultas.html', {
+        'page_obj': page_obj,
+        'pacientes': pacientes,
+        'queixas_choices': queixas_choices,
+    })
+
+
+@login_required
+def medico_pacientes(request):
+
+    if not medico_ou_superadmin(request.user):
+        raise PermissionDenied
+
+    queixa = request.GET.get('queixa')
+
+    pacientes = User.objects.filter(
+        consultas_como_paciente__medico=request.user,
+        consultas_como_paciente__status='realizada'
+    ).distinct().only('id', 'nome')
+
+    if queixa:
+        pacientes = pacientes.filter(queixa=queixa)
+
+    queixas_choices = User.QUEIXA_CHOICES
+
+    if queixa and not pacientes.exists():
+        messages.info(
+            request,
+            "Nenhum paciente encontrado com essa queixa."
+        )
+
+    return render(request, 'gmp/medico_pacientes.html', {
+        'pacientes': pacientes,
+        'queixas_choices': queixas_choices,
+    })
+
+
+@login_required
+def visualizar_receita(request, consulta_id):
+
+    consulta = get_object_or_404(
+        AgendamentoConsulta,
+        id=consulta_id
+    )
+
+    if request.user.role == 'paciente':
+        if consulta.paciente != request.user:
+            raise PermissionDenied
+
+        if consulta.status != 'realizada':
+            raise PermissionDenied
+
+    elif request.user.role == 'medico':
+        if consulta.medico != request.user:
+            raise PermissionDenied
+
+    else:
+        raise PermissionDenied
+
+    return render(request, 'gmp/receita.html', {
+        'consulta': consulta
+    })

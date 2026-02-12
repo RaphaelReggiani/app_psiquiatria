@@ -1,0 +1,153 @@
+{% extends "main.html" %}
+
+{% block body %}
+
+<div class="min-h-screen pt-2 flex items-center justify-center">
+
+  <div class="w-full max-w-4xl bg-white rounded-xl shadow-lg p-8">
+
+    <h2 class="text-3xl font-semibold text-center text-emerald-900 mb-6">
+      HISTÓRICO DE CONSULTAS REALIZADAS
+    </h2>
+
+    <!-- FILTROS -->
+    <form method="get"
+          class="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+
+        <input type="date"
+               name="data"
+               value="{{ request.GET.data }}"
+               class="border rounded-md p-2 text-sm">
+
+        <select name="paciente_id"
+                class="border rounded-md p-2 text-sm">
+
+            <option value="">Paciente</option>
+
+            {% for p in pacientes %}
+                <option value="{{ p.id }}"
+                    {% if request.GET.paciente_id == p.id|stringformat:"s" %}
+                        selected
+                    {% endif %}
+                >
+                    {{ p.nome }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <select name="queixa"
+                class="border rounded-md p-2 text-sm">
+
+            <option value="">Queixa</option>
+
+            {% for value, label in queixas_choices %}
+                <option value="{{ value }}"
+                    {% if request.GET.queixa == value %}
+                        selected
+                    {% endif %}
+                >
+                    {{ label }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <button type="submit"
+                class="cursor-pointer bg-emerald-600 text-white rounded-md px-4 py-2 text-sm font-semibold hover:bg-emerald-700 transition">
+            Filtrar
+        </button>
+
+    </form>
+
+    <!-- LIMPAR FILTROS -->
+    {% if request.GET %}
+    <div class="flex justify-end mb-6">
+        <a href="{% url 'historico_medico_consultas' %}"
+           class="text-red-500 text-sm font-semibold hover:underline transition">
+            Limpar Filtros
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- LISTAGEM -->
+    {% if page_obj and page_obj.object_list %}
+
+        <div class="space-y-4">
+
+            {% for consulta in page_obj %}
+
+                <div class="border border-gray-300 rounded-lg p-4 hover:shadow-md transition">
+
+                    <p class="font-semibold text-emerald-900">
+                        {{ consulta.data_hora|date:"d/m/Y H:i" }}
+                    </p>
+
+                    <p>
+                        <span class="font-medium">Paciente:</span>
+                        {{ consulta.paciente.nome }}
+                    </p>
+
+                    <p>
+                        <span class="font-medium">Queixa:</span>
+                        {{ consulta.paciente.get_queixa_display }}
+                    </p>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <p class="text-center text-gray-600">
+            Nenhuma consulta realizada encontrada.
+        </p>
+
+    {% endif %}
+
+    <!-- PAGINAÇÃO -->
+    {% if page_obj.has_other_pages %}
+
+        <div class="mt-8 flex justify-center items-center gap-2 text-sm">
+
+            {% if page_obj.has_previous %}
+                <a href="?page=1&{{ request.GET.urlencode|cut:'page='|cut:page_obj.number }}"
+                   class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition">
+                    First
+                </a>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <span class="px-3 py-1 bg-emerald-600 text-white rounded">
+                        {{ num }}
+                    </span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <a href="?page={{ num }}&{{ request.GET.urlencode|cut:'page='|cut:page_obj.number }}"
+                       class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition">
+                        {{ num }}
+                    </a>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.paginator.num_pages }}&{{ request.GET.urlencode|cut:'page='|cut:page_obj.number }}"
+                   class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition">
+                    Last
+                </a>
+            {% endif %}
+
+        </div>
+
+        <div class="mt-3 text-center text-gray-600 text-sm">
+            Resultados: {{ page_obj.paginator.count }}
+        </div>
+
+    {% endif %}
+
+  </div>
+
+</div>
+
+{% endblock %}
+

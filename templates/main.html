@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-br" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,27 +18,37 @@
             </a>
         </div>
 
-        {% if request.user.is_authenticated %}
         <div class="ml-12 flex gap-12 text-sm font-semibold text-emerald-900">
 
-            <a href="{% url 'marcar_consulta' %}" class="hover:text-emerald-600 transition">
-                Nova consulta
-            </a>
+            {% if request.user.is_authenticated and request.user.role != 'medico' %}
+                <a href="{% url 'marcar_consulta' %}" class="hover:text-emerald-600 transition">
+                    Nova consulta
+                </a>
+            {% endif %}
 
-            <a href="{% url 'home' %}" class="hover:text-emerald-600 transition">
-                Contato
-            </a>
+            <!-- SOBRE -->
+            {% if request.resolver_match.url_name == 'home' %}
+                <a href="#sobre" class="hover:text-emerald-600 transition">
+                    Sobre nós
+                </a>
+            {% else %}
+                <a href="{% url 'home' %}#sobre" class="hover:text-emerald-600 transition">
+                    Sobre nós
+                </a>
+            {% endif %}
 
-            <a href="{% url 'home' %}" class="hover:text-emerald-600 transition">
-                Suporte
-            </a>
-
-            <a href="{% url 'home' %}" class="hover:text-emerald-600 transition">
-                Sobre nós
-            </a>
+            <!-- CONTATO -->
+            {% if request.resolver_match.url_name == 'home' %}
+                <a href="#contato" class="hover:text-emerald-600 transition">
+                    Contato / Suporte
+                </a>
+            {% else %}
+                <a href="{% url 'home' %}#contato" class="hover:text-emerald-600 transition">
+                    Contato / Suporte
+                </a>
+            {% endif %}
 
         </div>
-        {% endif %}
 
         <div class="relative">
 
@@ -94,11 +104,15 @@
                 <div id="userDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 text-sm z-50">
 
                     <a href="{% url 'agenda_medico' %}" class="block px-4 py-2 hover:bg-gray-100 text-emerald-900">
-                        Consultas
+                        Minha Agenda
                     </a>
 
-                    <a href="{% url 'home' %}" class="block px-4 py-2 hover:bg-gray-100 text-emerald-900">
+                    <a href="{% url 'medico_pacientes' %}" class="block px-4 py-2 hover:bg-gray-100 text-emerald-900">
                         Meus Pacientes
+                    </a>
+
+                    <a href="{% url 'historico_medico_consultas' %}" class="block px-4 py-2 hover:bg-gray-100 text-emerald-900">
+                        Histórico de Consultas
                     </a>
 
                     <a href="{% url 'perfil_usuario' %}" class="block px-4 py-2 hover:bg-gray-100 text-emerald-900">
@@ -114,10 +128,9 @@
 
                 </div>
 
-
             {% elif request.user.is_authenticated %}
 
-                <!-- MENU USUÁRIO COMUM -->
+                <!-- MENU PACIENTE -->
                 <button id="userMenuButton"
                     class="flex cursor-pointer items-center gap-1 bg-white border-2 border-teal-400 rounded-xl px-3 py-1 text-sm font-semibold text-teal-700 hover:bg-teal-50">
 
@@ -148,19 +161,15 @@
 
                 </div>
 
-
             {% else %}
 
                 {% if request.resolver_match.url_name == 'home' %}
-
                     <a href="{% url 'login' %}" class="bg-white border-2 border-teal-400 rounded-xl px-3 py-1 text-sm font-semibold text-teal-700 hover:bg-teal-50">
                         LOGIN
                     </a>
-
                 {% endif %}
 
             {% endif %}
-
 
         </div>
 
@@ -199,3 +208,4 @@ document.addEventListener('DOMContentLoaded', function () {
 
 </body>
 </html>
+

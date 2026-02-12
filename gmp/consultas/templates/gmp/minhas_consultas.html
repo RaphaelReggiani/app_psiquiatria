@@ -11,11 +11,11 @@
       MINHAS CONSULTAS
     </h2>
 
-    {% if consultas %}
+    {% if page_obj and page_obj.object_list %}
 
       <div class="space-y-4">
 
-        {% for consulta in consultas %}
+        {% for consulta in page_obj %}
 
           {% if consulta.data_hora > now %}
             <div class="border border-emerald-300 rounded-lg p-4 flex justify-between items-center
@@ -37,21 +37,37 @@
                   </span>
                 </p>
 
-                <p>Status: {{ consulta.get_status_display }}</p>
+                <p>
+                  Status:
+                  <span class="font-semibold">
+                    {{ consulta.get_status_display }}
+                  </span>
+                </p>
               </div>
 
-              {% if consulta.status == 'marcada' and consulta.data_hora > now and user.role == 'paciente' %}
-                <form method="POST" action="{% url 'cancelar_consulta' consulta.id %}">
-                  {% csrf_token %}
-                  <button
-                    type="submit"
-                    class="bg-red-600 cursor-pointer hover:bg-red-700 text-white px-4 py-2 rounded-lg transition"
-                    onclick="return confirm('Tem certeza que deseja cancelar esta consulta?')"
-                  >
-                    Cancelar
-                  </button>
-                </form>
-              {% endif %}
+              <div class="flex gap-2">
+
+                {% if consulta.status == 'marcada' and consulta.data_hora > now %}
+                  <form method="POST" action="{% url 'cancelar_consulta' consulta.id %}">
+                    {% csrf_token %}
+                    <button
+                      type="submit"
+                      class="bg-red-600 cursor-pointer hover:bg-red-700 text-white px-4 py-2 rounded-lg transition"
+                      onclick="return confirm('Tem certeza que deseja cancelar esta consulta?')"
+                    >
+                      Cancelar
+                    </button>
+                  </form>
+                {% endif %}
+
+                {% if consulta.status == 'realizada' %}
+                  <a href="{% url 'visualizar_receita' consulta.id %}"
+                     class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition text-sm font-semibold">
+                    Ver Receita
+                  </a>
+                {% endif %}
+
+              </div>
 
             </div>
 
@@ -67,9 +83,50 @@
 
     {% endif %}
 
+    {% if page_obj.has_other_pages %}
+
+        <div class="mt-8 flex justify-center items-center gap-2 text-sm">
+
+            {% if page_obj.has_previous %}
+                <a href="?page=1"
+                   class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition">
+                    First
+                </a>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <span class="px-3 py-1 bg-emerald-600 text-white rounded">
+                        {{ num }}
+                    </span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <a href="?page={{ num }}"
+                       class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition">
+                        {{ num }}
+                    </a>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.paginator.num_pages }}"
+                   class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition">
+                    Last
+                </a>
+            {% endif %}
+
+        </div>
+
+        <div class="mt-3 text-center text-gray-600 text-sm">
+            Total de consultas: {{ page_obj.paginator.count }}
+        </div>
+
+    {% endif %}
+
   </div>
 
 </div>
 
 {% endblock body %}
+
+
 

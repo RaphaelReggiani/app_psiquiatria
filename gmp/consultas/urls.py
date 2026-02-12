@@ -9,5 +9,8 @@ urlpatterns = [
     path('historico/<int:paciente_id>/', views.historico_paciente, name='historico_paciente'),
     path('cadastrar/<int:agendamento_id>/', views.cadastrar_consulta, name='cadastrar_consulta'),
     path('horarios-disponiveis/', views.horarios_disponiveis, name='horarios_disponiveis'),
-    path('cancelar/<int:consulta_id>/',views.cancelar_consulta,name='cancelar_consulta'),
+    path('cancelar/<int:consulta_id>/', views.cancelar_consulta,name='cancelar_consulta'),
+    path('historico-medico/', views.historico_medico_consultas, name='historico_medico_consultas'),
+    path('medico/pacientes/',views.medico_pacientes,name='medico_pacientes'),
+    path('consulta/<int:consulta_id>/receita/', views.visualizar_receita,name='visualizar_receita'),
 ]
