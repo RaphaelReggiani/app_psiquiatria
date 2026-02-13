@@ -13,4 +13,5 @@ urlpatterns = [
     path('historico-medico/', views.historico_medico_consultas, name='historico_medico_consultas'),
     path('medico/pacientes/',views.medico_pacientes,name='medico_pacientes'),
     path('consulta/<int:consulta_id>/receita/', views.visualizar_receita,name='visualizar_receita'),
+    path('gerar-receita-preview/<int:agendamento_id>/', views.gerar_receita_preview, name='gerar_receita_preview'),
 ]

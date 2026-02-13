@@ -3,6 +3,8 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
 
 from .forms import (
     CustomUserCreationForm,
@@ -66,6 +68,7 @@ def login_view(request):
     })
 
 
+@require_POST
 def logout_view(request):
     logout(request)
     messages.info(request, "Você deslogou.")
@@ -76,32 +79,27 @@ def login_required_view(request):
     return render(request, 'gmp/login_required.html')
 
 
+@login_required(login_url='login_required')
 def profile_view(request):
 
-    if not request.user.is_authenticated:
-        messages.error(request, "Você precisa estar logado para acessar seu perfil.")
-        return redirect('login_required')
-    
+    if request.method == 'POST':
+        form = CustomUserChangeForm(
+            request.POST,
+            request.FILES,
+            instance=request.user,
+            request_user=request.user
+        )
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Perfil atualizado.")
+            return redirect('perfil_usuario')
+
     else:
-
-        if request.method == 'POST':
-            form = CustomUserChangeForm(
-                request.POST,
-                request.FILES,
-                instance=request.user,
-                request_user=request.user
-            )
-
-            if form.is_valid():
-                form.save()
-                messages.success(request, "Perfil atualizado.")
-                return redirect('perfil_usuario')
-
-        else:
-            form = CustomUserChangeForm(
-                instance=request.user,
-                request_user=request.user
-            )
+        form = CustomUserChangeForm(
+            instance=request.user,
+            request_user=request.user
+        )
 
     return render(request, 'gmp/perfil_usuario.html', {'edit_form': form})
 

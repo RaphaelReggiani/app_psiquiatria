@@ -131,9 +131,31 @@ class Consulta(models.Model):
 
     criado_em = models.DateTimeField(auto_now_add=True)
 
+    crm_medico = models.CharField(
+    max_length=20,
+    blank=True,
+    null=True
+    )
+
+    descricao_receita = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    data_geracao_receita = models.DateTimeField(
+        blank=True,
+        null=True
+    )
+
+    receita_pdf = models.FileField(
+        upload_to='receitas/',
+        blank=True,
+        null=True
+    )
+
     def __str__(self):
         return f"[{self.protocolo}] {self.agendamento}"
-    
+
 
 class ConsultaLog(models.Model):
 

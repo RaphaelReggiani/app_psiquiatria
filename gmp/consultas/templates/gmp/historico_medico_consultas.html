@@ -10,7 +10,6 @@
       HISTÓRICO DE CONSULTAS REALIZADAS
     </h2>
 
-    <!-- FILTROS -->
     <form method="get"
           class="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
 
@@ -58,7 +57,6 @@
 
     </form>
 
-    <!-- LIMPAR FILTROS -->
     {% if request.GET %}
     <div class="flex justify-end mb-6">
         <a href="{% url 'historico_medico_consultas' %}"
@@ -68,7 +66,6 @@
     </div>
     {% endif %}
 
-    <!-- LISTAGEM -->
     {% if page_obj and page_obj.object_list %}
 
         <div class="space-y-4">
@@ -105,7 +102,6 @@
 
     {% endif %}
 
-    <!-- PAGINAÇÃO -->
     {% if page_obj.has_other_pages %}
 
         <div class="mt-8 flex justify-center items-center gap-2 text-sm">

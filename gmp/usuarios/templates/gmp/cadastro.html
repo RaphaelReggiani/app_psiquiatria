@@ -11,16 +11,6 @@
       NOVO CADASTRO
     </h2>
 
-    {% if messages %}
-      <div class="mb-4">
-        {% for message in messages %}
-          <p class="{% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}text-red-600{% else %}text-green-600{% endif %} font-semibold text-center">
-            {{ message }}
-          </p>
-        {% endfor %}
-      </div>
-    {% endif %}
-
     {% if signup_form.non_field_errors %}
       <div class="text-red-600 mb-4 text-center">
         {% for error in signup_form.non_field_errors %}

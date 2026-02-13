@@ -19,13 +19,6 @@
       <button type="submit" class="w-full bg-emerald-600 cursor-pointer text-white px-4 py-2 rounded hover:bg-emerald-700">Redefinir senha</button>
     </form>
 
-    {% if messages %}
-      <div class="mt-4">
-        {% for message in messages %}
-          <p class="text-green-600">{{ message }}</p>
-        {% endfor %}
-      </div>
-    {% endif %}
   </div>
 </div>
 {% endblock body %}
