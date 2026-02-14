@@ -291,9 +291,9 @@ def cadastrar_consulta(request, agendamento_id):
 def cancelar_consulta(request, consulta_id):
 
     consulta = get_object_or_404(
-        AgendamentoConsulta,
+        AgendamentoConsulta.objects.select_related('paciente', 'medico'),
         id=consulta_id,
-        status='marcada'
+        status=AgendamentoConsulta.STATUS_MARCADA
     )
 
     if request.user.role == 'medico' and consulta.medico != request.user:
@@ -304,32 +304,32 @@ def cancelar_consulta(request, consulta_id):
 
     if consulta.data_hora <= timezone.now():
         messages.error(request, "Não é possível cancelar consultas passadas.")
+        return redirect(
+            'agenda_medico' if request.user.role == 'medico'
+            else 'minhas_consultas'
+        )
 
-        if request.user.role == 'medico':
-            return redirect('agenda_medico')
+    with transaction.atomic():
 
-        return redirect('minhas_consultas')
-    
-    
-    status_anterior = consulta.status
+        status_anterior = consulta.status
 
-    consulta.status = 'cancelada'
-    consulta.cancelado_por = request.user
-    consulta.save()
+        consulta.status = AgendamentoConsulta.STATUS_CANCELADA
+        consulta.cancelado_por = request.user
+        consulta.save(update_fields=['status', 'cancelado_por', 'cancelado_em'])
 
-    ConsultaLog.objects.create(
-        consulta=consulta,
-        usuario=request.user,
-        status_anterior=status_anterior,
-        status_novo='cancelada'
-    )
+        ConsultaLog.objects.create(
+            consulta=consulta,
+            usuario=request.user,
+            status_anterior=status_anterior,
+            status_novo=AgendamentoConsulta.STATUS_CANCELADA
+        )
 
     messages.success(request, "Consulta cancelada com sucesso.")
 
-    if request.user.role == 'medico':
-        return redirect('agenda_medico')
-
-    return redirect('minhas_consultas')
+    return redirect(
+        'agenda_medico' if request.user.role == 'medico'
+        else 'minhas_consultas'
+    )
 
 
 @login_required
@@ -416,26 +416,24 @@ def medico_pacientes(request):
 def visualizar_receita(request, consulta_id):
 
     agendamento = get_object_or_404(
-        AgendamentoConsulta,
+        AgendamentoConsulta.objects.select_related('consulta', 'paciente', 'medico'),
         id=consulta_id
     )
 
-    try:
-        consulta = agendamento.consulta
-    except Consulta.DoesNotExist:
+    if not hasattr(agendamento, 'consulta'):
         raise PermissionDenied
 
-    if request.user.role == 'paciente':
-        if consulta.paciente != request.user:
-            raise PermissionDenied
+    consulta = agendamento.consulta
 
-        if consulta.status != 'realizada':
+    if request.user.role == 'paciente':
+        if agendamento.paciente != request.user:
+            raise PermissionDenied
+        if agendamento.status != AgendamentoConsulta.STATUS_REALIZADA:
             raise PermissionDenied
 
     elif request.user.role == 'medico':
-        if consulta.medico != request.user:
+        if agendamento.medico != request.user:
             raise PermissionDenied
-
     else:
         raise PermissionDenied
 
