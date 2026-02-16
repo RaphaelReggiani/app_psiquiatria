@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     'gmp.consultas.apps.ConsultasConfig',
     'rest_framework',
     'widget_tweaks',
+    'api',
 ]
 
 MIDDLEWARE = [
@@ -101,9 +102,10 @@ MESSAGE_TAGS = {
 }
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
-    ]
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
 }
 
 AUTH_USER_MODEL = 'usuarios.CustomUser'
