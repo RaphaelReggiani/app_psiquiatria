@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from gmp.usuarios.models import CustomUser
 from gmp.consultas.models import AgendamentoConsulta, Consulta
+from django.utils import timezone
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -98,17 +99,22 @@ class ConsultaSerializer(serializers.ModelSerializer):
             'criado_em'
         ]
 
+    def validate(self, data):
+        agendamento = data.get("agendamento")
+
+        if agendamento and agendamento.data_hora < timezone.now():
+            raise serializers.ValidationError(
+                "Não é permitido criar consulta para agendamento no passado."
+            )
+
+        return data
+
     def update(self, instance, validated_data):
         validated_data.pop('agendamento', None)
         return super().update(instance, validated_data)
     
     def validate_agendamento(self, value):
         request = self.context.get('request')
-
-        if not request or not hasattr(request, "user"):
-            raise serializers.ValidationError(
-                "Contexto de requisição inválido."
-            )
 
         user = request.user
         if user.role != 'medico':
@@ -123,6 +129,26 @@ class ConsultaSerializer(serializers.ModelSerializer):
         if value.status != 'realizada':
             raise serializers.ValidationError(
                 "Consulta só pode ser registrada para agendamento realizado."
+            )
+
+        return value
+    
+    def validate_receita(self, value):
+        max_size = 5 * 1024 * 1024
+
+        if value.size > max_size:
+            raise serializers.ValidationError(
+                "Arquivo excede o tamanho máximo de 5MB."
+            )
+
+        if not value.name.lower().endswith(".pdf"):
+            raise serializers.ValidationError(
+                "A receita deve ser PDF."
+            )
+
+        if hasattr(value, "content_type") and value.content_type != "application/pdf":
+            raise serializers.ValidationError(
+                "Tipo inválido."
             )
 
         return value

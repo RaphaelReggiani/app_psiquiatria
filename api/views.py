@@ -1,6 +1,6 @@
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from gmp.usuarios.models import CustomUser
 from gmp.consultas.models import Consulta, AgendamentoConsulta
@@ -19,7 +19,7 @@ from .permissions import (
 
 
 class UserViewSet(viewsets.ModelViewSet):
-
+    
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
 
@@ -65,6 +65,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class ConsultaViewSet(viewsets.ModelViewSet):
 
+    queryset = Consulta.objects.all()
     serializer_class = ConsultaSerializer
     permission_classes = [IsConsultaOwnerOrSuperAdmin]
 
@@ -87,24 +88,13 @@ class ConsultaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
 
-        user = self.request.user
-
-        if user.role != 'medico':
-            raise PermissionDenied("Apenas médicos podem registrar consultas.")
-
-        agendamento = serializer.validated_data['agendamento']
-
-        if agendamento.status != 'realizada':
-            raise PermissionDenied(
-                "Consulta só pode ser registrada para agendamento realizado."
-            )
-
-        if agendamento.medico != user:
-            raise PermissionDenied(
-                "Você não pode registrar consulta de outro médico."
-            )
-
         serializer.save()
+
+    def update(self, request, *args, **kwargs):
+        raise ValidationError("Consulta não pode ser editada após criação.")
+
+    def partial_update(self, request, *args, **kwargs):
+        raise ValidationError("Consulta não pode ser editada após criação.")
 
 
 class AgendamentoConsultaViewSet(viewsets.ModelViewSet):
