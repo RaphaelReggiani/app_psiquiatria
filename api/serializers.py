@@ -80,6 +80,31 @@ class AgendamentoConsultaSerializer(serializers.ModelSerializer):
             'status'
         ]
 
+    def update(self, instance, validated_data):
+        if instance.status in ['realizada', 'nao_realizada']:
+            raise serializers.ValidationError(
+                "Agendamento finalizado não pode ser alterado."
+            )
+        return super().update(instance, validated_data)
+    
+    def validate(self, data):
+        request = self.context.get("request")
+        user = request.user
+
+        if "status" in data:
+            if user.role not in ["medico", "superadm"]:
+                raise serializers.ValidationError(
+                    "Você não pode alterar o status."
+                )
+
+            if user.role == "medico" and self.instance:
+                if self.instance.medico != user:
+                    raise serializers.ValidationError(
+                        "Você não pode alterar agendamento de outro médico."
+                    )
+
+        return data
+
 
 class ConsultaSerializer(serializers.ModelSerializer):
 
@@ -91,12 +116,10 @@ class ConsultaSerializer(serializers.ModelSerializer):
             'condicao_paciente',
             'descricao',
             'receita',
-            'arquivo'
-        ]
-        read_only_fields = [
+            'arquivo',
             'id',
             'protocolo',
-            'criado_em'
+            'criado_em',
         ]
 
     def validate(self, data):
@@ -105,6 +128,11 @@ class ConsultaSerializer(serializers.ModelSerializer):
         if agendamento and agendamento.data_hora < timezone.now():
             raise serializers.ValidationError(
                 "Não é permitido criar consulta para agendamento no passado."
+            )
+
+        if agendamento and hasattr(agendamento, "consulta"):
+            raise serializers.ValidationError(
+                "Este agendamento já possui consulta registrada."
             )
 
         return data

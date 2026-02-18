@@ -1,4 +1,5 @@
 from django.db import models, transaction
+from django.db.models import Q
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
@@ -67,6 +68,14 @@ class AgendamentoConsulta(models.Model):
                 name='unique_paciente_horario'
             ),
         ]
+        indexes = [
+            models.Index(fields=['medico']),
+            models.Index(fields=['paciente']),
+            models.Index(fields=['status']),
+            models.Index(fields=['data_hora']),
+            models.Index(fields=['medico', 'data_hora']),
+            models.Index(fields=['paciente', 'data_hora']),
+        ]
 
     def __str__(self):
         return f"{self.data_hora} - {self.medico} - {self.paciente}"
@@ -76,30 +85,13 @@ class AgendamentoConsulta(models.Model):
             self.cancelado_em = timezone.now()
         super().save(*args, **kwargs)
 
-    @classmethod
-    def atualizar_consultas_expiradas(cls):
-
-        from .models import ConsultaLog
-
-        agora = timezone.now()
-        limite = agora - timedelta(hours=2)
-
-        consultas_expiradas = cls.objects.filter(
-            status=cls.STATUS_MARCADA,
-            data_hora__lt=limite
-        )
-
-        for consulta in consultas_expiradas:
-            with transaction.atomic():
-                consulta.status = cls.STATUS_NAO_REALIZADA
-                consulta.save(update_fields=['status', 'atualizado_em'])
-
-                ConsultaLog.objects.create(
-                    consulta=consulta,
-                    usuario=None,
-                    status_anterior=cls.STATUS_MARCADA,
-                    status_novo=cls.STATUS_NAO_REALIZADA
-                )
+    def delete(self, *args, **kwargs):
+        if self.status in [
+            self.STATUS_REALIZADA,
+            self.STATUS_NAO_REALIZADA
+        ]:
+            raise Exception("Agendamento finalizado não pode ser deletado.")
+        super().delete(*args, **kwargs)
 
 
 class Consulta(models.Model):
@@ -112,7 +104,7 @@ class Consulta(models.Model):
 
     agendamento = models.OneToOneField(
         AgendamentoConsulta,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name='consulta'
     )
 
@@ -143,6 +135,14 @@ class Consulta(models.Model):
 
     criado_em = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['agendamento'],
+                name='unique_consulta_por_agendamento'
+            )
+        ]
+
     crm_medico = models.CharField(max_length=20, blank=True, null=True)
     descricao_receita = models.TextField(blank=True, null=True)
     data_geracao_receita = models.DateTimeField(blank=True, null=True)
@@ -155,13 +155,16 @@ class Consulta(models.Model):
 
     def __str__(self):
         return f"[{self.protocolo}] {self.agendamento}"
+    
+    def delete(self, *args, **kwargs):
+        raise Exception("Consulta não pode ser deletada.")
 
 
 class ConsultaLog(models.Model):
 
     consulta = models.ForeignKey(
         AgendamentoConsulta,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name='logs'
     )
 
@@ -175,6 +178,12 @@ class ConsultaLog(models.Model):
     status_novo = models.CharField(max_length=20)
 
     criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['consulta']),
+            models.Index(fields=['criado_em']),
+        ]
 
     def __str__(self):
         return f"{self.consulta} - {self.status_anterior} → {self.status_novo}"

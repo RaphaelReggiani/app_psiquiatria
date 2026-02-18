@@ -11,19 +11,17 @@ from django.utils.timezone import localdate
 from django.db import transaction
 from django.db.models import Q
 from django.core.paginator import Paginator
+from django.core.cache import cache
 
 from django.http import HttpResponse
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib import colors
-from reportlab.lib.units import inch
-from reportlab.graphics.barcode import qr
-from reportlab.graphics.shapes import Drawing
-from io import BytesIO
 
 from .models import AgendamentoConsulta, Consulta, ConsultaLog
 from django.contrib.auth import get_user_model
 from .forms import AgendamentoConsultaForm, ConsultaForm
+
+from gmp.consultas.services.receita_service import gerar_receita_pdf
+
+from .selectors import consultas_do_paciente, consultas_realizadas_por_medico, pacientes_do_medico
 
 
 User = get_user_model()
@@ -70,7 +68,7 @@ def marcar_consulta(request):
                     consulta=agendamento,
                     usuario=request.user,
                     status_anterior='-',
-                    status_novo='marcada'
+                    status_novo=AgendamentoConsulta.STATUS_MARCADA
                 )
 
                 messages.success(request, "Consulta marcada com sucesso.")
@@ -90,6 +88,12 @@ def horarios_disponiveis(request):
     medico_id = request.GET.get('medico')
     data = request.GET.get('data')
 
+    cache_key = f"horarios_{medico_id}_{data}"
+    cached = cache.get(cache_key)
+
+    if cached is not None:
+        return JsonResponse(cached, safe=False)
+
     if not medico_id or not data:
         return JsonResponse([], safe=False)
 
@@ -108,10 +112,10 @@ def horarios_disponiveis(request):
             if dt >= minimo:
                 horarios.append(dt)
 
-    ocupados = AgendamentoConsulta.objects.filter(
+    ocupados = AgendamentoConsulta.objects.only('data_hora').filter(
         medico_id=medico_id,
         data_hora__date=data,
-        status='marcada'
+        status=AgendamentoConsulta.STATUS_MARCADA
     ).values_list('data_hora', flat=True)
 
     ocupados = set(ocupados)
@@ -120,6 +124,8 @@ def horarios_disponiveis(request):
         h.strftime('%H:%M')
         for h in horarios if h not in ocupados
     ]
+    
+    cache.set(cache_key, disponiveis, timeout=60)
 
     return JsonResponse(disponiveis, safe=False)
 
@@ -129,12 +135,19 @@ def agenda_medico(request):
     if not medico_ou_superadmin(request.user):
         raise PermissionDenied
 
-    AgendamentoConsulta.atualizar_consultas_expiradas()
-
     hoje = localdate()
 
-    consultas = AgendamentoConsulta.objects.filter(
-        data_hora__gte=timezone.now()
+    consultas = AgendamentoConsulta.objects.select_related(
+        'paciente',
+        'medico'
+    ).only(
+        'id',
+        'data_hora',
+        'status',
+        'paciente__id',
+        'paciente__nome',
+        'medico__id',
+        'medico__nome'
     )
 
     if request.user.role == 'medico':
@@ -191,12 +204,8 @@ def minhas_consultas(request):
 
     if request.user.role != 'paciente':
         raise PermissionDenied
-    
-    AgendamentoConsulta.atualizar_consultas_expiradas()
 
-    consultas = AgendamentoConsulta.objects.filter(
-        paciente=request.user
-    ).order_by('-data_hora')
+    consultas = consultas_do_paciente(request.user)
 
     paginator = Paginator(consultas, 10)
     page_number = request.GET.get('page')
@@ -213,9 +222,11 @@ def historico_paciente(request, paciente_id):
     if not medico_ou_superadmin(request.user):
         raise PermissionDenied
 
-    consultas = AgendamentoConsulta.objects.filter(
+    consultas = AgendamentoConsulta.objects.select_related(
+        'medico'
+    ).filter(
         paciente_id=paciente_id,
-        status='realizada'
+        status=AgendamentoConsulta.STATUS_REALIZADA
     )
 
     return render(request, 'gmp/historico_paciente.html', {
@@ -230,12 +241,12 @@ def cadastrar_consulta(request, agendamento_id):
         raise PermissionDenied
 
     agendamento = get_object_or_404(
-        AgendamentoConsulta,
+        AgendamentoConsulta.objects.select_related('paciente', 'medico'),
         id=agendamento_id,
         medico=request.user
     )
 
-    if agendamento.status != 'marcada':
+    if agendamento.status != AgendamentoConsulta.STATUS_MARCADA:
         messages.warning(request, "Consulta já registrada ou cancelada.")
         return redirect('agenda_medico')
 
@@ -243,26 +254,29 @@ def cadastrar_consulta(request, agendamento_id):
         form = ConsultaForm(request.POST, request.FILES)
 
         if form.is_valid():
-                
+
             with transaction.atomic():
-                
+
                 consulta = form.save(commit=False)
                 consulta.agendamento = agendamento
                 consulta.save()
 
                 status_anterior = agendamento.status
-
-                agendamento.status = 'realizada'
+                agendamento.status = AgendamentoConsulta.STATUS_REALIZADA
                 agendamento.save()
+
+                data_str = agendamento.data_hora.date().strftime("%Y-%m-%d")
+                cache_key = f"horarios_{agendamento.medico.id}_{data_str}"
+                cache.delete(cache_key)
 
                 ConsultaLog.objects.create(
                     consulta=agendamento,
                     usuario=request.user,
                     status_anterior=status_anterior,
-                    status_novo='realizada'
+                    status_novo=AgendamentoConsulta.STATUS_REALIZADA
                 )
 
-                send_mail(
+                transaction.on_commit(lambda: send_mail(
                     subject='Consulta confirmada',
                     message=(
                         f"Sua consulta foi marcada para "
@@ -272,10 +286,10 @@ def cadastrar_consulta(request, agendamento_id):
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[agendamento.paciente.email],
                     fail_silently=True,
-                )
+                ))
 
-                messages.success(request, "Consulta registrada com sucesso.")
-                return redirect('agenda_medico')
+            messages.success(request, "Consulta registrada com sucesso.")
+            return redirect('agenda_medico')
 
     else:
         form = ConsultaForm()
@@ -317,6 +331,11 @@ def cancelar_consulta(request, consulta_id):
         consulta.cancelado_por = request.user
         consulta.save(update_fields=['status', 'cancelado_por', 'cancelado_em'])
 
+
+        data_str = consulta.data_hora.date().strftime("%Y-%m-%d")
+        cache_key = f"horarios_{consulta.medico.id}_{data_str}"
+        cache.delete(cache_key)
+
         ConsultaLog.objects.create(
             consulta=consulta,
             usuario=request.user,
@@ -338,10 +357,7 @@ def historico_medico_consultas(request):
     if not medico_ou_superadmin(request.user):
         raise PermissionDenied
 
-    consultas = AgendamentoConsulta.objects.filter(
-        medico=request.user,
-        status='realizada'
-    ).order_by('-data_hora')
+    consultas = consultas_realizadas_por_medico(request.user)
 
     data = request.GET.get('data')
     paciente_id = request.GET.get('paciente_id')
@@ -358,10 +374,7 @@ def historico_medico_consultas(request):
             paciente__queixa=queixa
         )
 
-    pacientes = User.objects.filter(
-        consultas_como_paciente__medico=request.user,
-        consultas_como_paciente__status='realizada'
-    ).distinct().only('id', 'nome')
+    pacientes = pacientes_do_medico(request.user)
 
     queixas_choices = User.QUEIXA_CHOICES
 
@@ -390,10 +403,7 @@ def medico_pacientes(request):
 
     queixa = request.GET.get('queixa')
 
-    pacientes = User.objects.filter(
-        consultas_como_paciente__medico=request.user,
-        consultas_como_paciente__status='realizada'
-    ).distinct().only('id', 'nome')
+    pacientes = pacientes_do_medico(request.user)
 
     if queixa:
         pacientes = pacientes.filter(queixa=queixa)
@@ -448,12 +458,12 @@ def gerar_receita_preview(request, agendamento_id):
         raise PermissionDenied
 
     agendamento = get_object_or_404(
-        AgendamentoConsulta,
+        AgendamentoConsulta.objects.select_related('paciente'),
         id=agendamento_id,
         medico=request.user
     )
 
-    if agendamento.status != 'marcada':
+    if agendamento.status != AgendamentoConsulta.STATUS_MARCADA:
         return HttpResponse("Esta consulta não permite gerar receita.", status=400)
 
     crm = request.GET.get("crm")
@@ -462,70 +472,14 @@ def gerar_receita_preview(request, agendamento_id):
     if not crm or not descricao:
         return HttpResponse("CRM e descrição são obrigatórios.", status=400)
 
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(
-        buffer,
-        rightMargin=40,
-        leftMargin=40,
-        topMargin=60,
-        bottomMargin=40
-    )
-    elements = []
-
-    styles = getSampleStyleSheet()
-
-    titulo_style = ParagraphStyle(
-        'Titulo',
-        parent=styles['Heading1'],
-        textColor=colors.HexColor("#065f46"),
-        fontSize=18
+    pdf_buffer = gerar_receita_pdf(
+        agendamento=agendamento,
+        medico_nome=request.user.nome,
+        crm=crm,
+        descricao=descricao
     )
 
-    normal_style = styles["Normal"]
-
-    elements.append(Paragraph("G.M.P - Receita Médica", titulo_style))
-    elements.append(Spacer(1, 0.3 * inch))
-
-    elements.append(Paragraph(f"Médico: {request.user.nome}", normal_style))
-    elements.append(Paragraph(f"CRM: {crm}", normal_style))
-    elements.append(Spacer(1, 0.2 * inch))
-
-    elements.append(Paragraph(f"Paciente: {agendamento.paciente.nome}", normal_style))
-    elements.append(Paragraph(f"Idade: {agendamento.paciente.idade}", normal_style))
-    elements.append(Spacer(1, 0.2 * inch))
-
-    elements.append(HRFlowable(width="100%", thickness=1, color=colors.grey))
-    elements.append(Spacer(1, 0.2 * inch))
-
-    elements.append(Paragraph("Descrição da Receita:", styles["Heading3"]))
-    elements.append(Spacer(1, 0.2 * inch))
-    elements.append(Paragraph(descricao.replace("\n", "<br/>"), normal_style))
-
-    elements.append(Spacer(1, 0.5 * inch))
-
-    elements.append(Paragraph(
-        f"Data: {timezone.now().strftime('%d/%m/%Y %H:%M')}",
-        normal_style
-    ))
-
-    elements.append(Spacer(1, 0.5 * inch))
-    elements.append(Paragraph("Assinatura: ________________________________", normal_style))
-
-    qr_code = qr.QrCodeWidget(str(agendamento.id))
-    bounds = qr_code.getBounds()
-    size = 100
-    width = bounds[2] - bounds[0]
-    height = bounds[3] - bounds[1]
-    drawing = Drawing(size, size, transform=[size/width,0,0,size/height,0,0])
-    drawing.add(qr_code)
-
-    elements.append(Spacer(1, 0.5 * inch))
-    elements.append(drawing)
-
-    doc.build(elements)
-    buffer.seek(0)
-
-    response = HttpResponse(buffer, content_type='application/pdf')
+    response = HttpResponse(pdf_buffer, content_type='application/pdf')
     response['Content-Disposition'] = 'inline; filename="receita_preview.pdf"'
 
     ConsultaLog.objects.create(
