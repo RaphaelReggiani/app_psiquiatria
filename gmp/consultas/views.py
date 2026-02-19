@@ -15,6 +15,8 @@ from django.core.cache import cache
 
 from django.http import HttpResponse
 
+from gmp.usuarios.models import CustomUser
+
 from .models import AgendamentoConsulta, Consulta, ConsultaLog
 from django.contrib.auth import get_user_model
 from .forms import AgendamentoConsultaForm, ConsultaForm
@@ -37,7 +39,7 @@ def medico_ou_superadmin(user):
 @login_required
 def marcar_consulta(request):
 
-    if request.user.role == 'medico':
+    if request.user.role == CustomUser.ROLE_MEDICO:
         raise PermissionDenied
 
     if not paciente_ou_superadmin(request.user):
@@ -52,10 +54,10 @@ def marcar_consulta(request):
         if form.is_valid():
             agendamento = form.save(commit=False)
 
-            if request.user.role == 'paciente':
+            if request.user.role == CustomUser.ROLE_PACIENTE:
                 agendamento.paciente = request.user
 
-            elif request.user.role == 'superadm':
+            elif request.user.role == CustomUser.ROLE_SUPERADM:
                 if agendamento.paciente is None:
                     messages.error(request, "Selecione um paciente.")
                     return render(request, 'gmp/marcar_consulta.html', {'form': form})
@@ -150,15 +152,13 @@ def agenda_medico(request):
         'medico__nome'
     )
 
-    if request.user.role == 'medico':
+    if request.user.role == CustomUser.ROLE_MEDICO:
         consultas = consultas.filter(medico=request.user)
 
     data = request.GET.get('data')
     paciente_id = request.GET.get('paciente_id')
     queixa = request.GET.get('queixa')
-    queixas_choices = User.QUEIXA_CHOICES
     status = request.GET.get('status')
-    status_choices = AgendamentoConsulta.STATUS_CHOICES
 
     if data:
         consultas = consultas.filter(data_hora__date=data)
@@ -182,7 +182,7 @@ def agenda_medico(request):
             "Não há consultas registradas com estes parâmetros."
         )
 
-    if request.user.role == 'medico':
+    if request.user.role == CustomUser.ROLE_MEDICO:
         pacientes = User.objects.filter(
             consultas_como_paciente__medico=request.user
         ).only('id', 'nome').distinct()
@@ -194,15 +194,15 @@ def agenda_medico(request):
         'hoje': hoje,
         'now': timezone.now(),
         'pacientes': pacientes,
-        'queixas_choices': queixas_choices,
-        'status_choices': status_choices,
+        'queixas_choices': CustomUser.QUEIXA_CHOICES,
+        'status_choices': AgendamentoConsulta.STATUS_CHOICES,
     })
 
 
 @login_required
 def minhas_consultas(request):
 
-    if request.user.role != 'paciente':
+    if request.user.role != CustomUser.ROLE_PACIENTE:
         raise PermissionDenied
 
     consultas = consultas_do_paciente(request.user)
@@ -310,16 +310,16 @@ def cancelar_consulta(request, consulta_id):
         status=AgendamentoConsulta.STATUS_MARCADA
     )
 
-    if request.user.role == 'medico' and consulta.medico != request.user:
+    if request.user.role == CustomUser.ROLE_MEDICO and consulta.medico != request.user:
         raise PermissionDenied
 
-    if request.user.role == 'paciente' and consulta.paciente != request.user:
+    if request.user.role == CustomUser.ROLE_PACIENTE and consulta.paciente != request.user:
         raise PermissionDenied
 
     if consulta.data_hora <= timezone.now():
         messages.error(request, "Não é possível cancelar consultas passadas.")
         return redirect(
-            'agenda_medico' if request.user.role == 'medico'
+            'agenda_medico' if request.user.role == CustomUser.ROLE_MEDICO
             else 'minhas_consultas'
         )
 
@@ -346,7 +346,7 @@ def cancelar_consulta(request, consulta_id):
     messages.success(request, "Consulta cancelada com sucesso.")
 
     return redirect(
-        'agenda_medico' if request.user.role == 'medico'
+        'agenda_medico' if request.user.role == CustomUser.ROLE_MEDICO
         else 'minhas_consultas'
     )
 
@@ -376,8 +376,6 @@ def historico_medico_consultas(request):
 
     pacientes = pacientes_do_medico(request.user)
 
-    queixas_choices = User.QUEIXA_CHOICES
-
     if (data or paciente_id or queixa) and not consultas.exists():
         messages.info(
             request,
@@ -391,7 +389,7 @@ def historico_medico_consultas(request):
     return render(request, 'gmp/historico_medico_consultas.html', {
         'page_obj': page_obj,
         'pacientes': pacientes,
-        'queixas_choices': queixas_choices,
+        'queixas_choices': CustomUser.QUEIXA_CHOICES,
     })
 
 
@@ -408,8 +406,6 @@ def medico_pacientes(request):
     if queixa:
         pacientes = pacientes.filter(queixa=queixa)
 
-    queixas_choices = User.QUEIXA_CHOICES
-
     if queixa and not pacientes.exists():
         messages.info(
             request,
@@ -418,7 +414,7 @@ def medico_pacientes(request):
 
     return render(request, 'gmp/medico_pacientes.html', {
         'pacientes': pacientes,
-        'queixas_choices': queixas_choices,
+        'queixas_choices': CustomUser.QUEIXA_CHOICES,
     })
 
 
@@ -435,13 +431,13 @@ def visualizar_receita(request, consulta_id):
 
     consulta = agendamento.consulta
 
-    if request.user.role == 'paciente':
+    if request.user.role == CustomUser.ROLE_PACIENTE:
         if agendamento.paciente != request.user:
             raise PermissionDenied
         if agendamento.status != AgendamentoConsulta.STATUS_REALIZADA:
             raise PermissionDenied
 
-    elif request.user.role == 'medico':
+    elif request.user.role == CustomUser.ROLE_MEDICO:
         if agendamento.medico != request.user:
             raise PermissionDenied
     else:
@@ -454,7 +450,7 @@ def visualizar_receita(request, consulta_id):
 @login_required
 def gerar_receita_preview(request, agendamento_id):
 
-    if request.user.role != 'medico':
+    if request.user.role != CustomUser.ROLE_MEDICO:
         raise PermissionDenied
 
     agendamento = get_object_or_404(

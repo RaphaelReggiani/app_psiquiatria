@@ -3,6 +3,8 @@ from django.utils import timezone
 from datetime import datetime, time, timedelta
 from django.conf import settings
 
+from gmp.usuarios.models import CustomUser
+
 from .models import Consulta, AgendamentoConsulta
 
 User = settings.AUTH_USER_MODEL
@@ -44,20 +46,19 @@ class AgendamentoConsultaForm(forms.ModelForm):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
-        from gmp.usuarios.models import CustomUser
 
-        self.fields['paciente'].queryset = CustomUser.objects.filter(role='paciente')
-        self.fields['medico'].queryset = CustomUser.objects.filter(role='medico')
+        self.fields['paciente'].queryset = CustomUser.objects.filter(role=CustomUser.ROLE_PACIENTE)
+        self.fields['medico'].queryset = CustomUser.objects.filter(role=CustomUser.ROLE_MEDICO)
         self.fields['medico'].empty_label = "Selecione o médico"
 
-        if self.user and self.user.role == 'paciente':
+        if self.user and self.user.role == CustomUser.ROLE_PACIENTE:
             self.fields['paciente'].widget = forms.HiddenInput()
 
     def clean(self):
 
         cleaned = super().clean()
 
-        if self.user and self.user.role == 'medico':
+        if self.user and self.user.role == CustomUser.ROLE_MEDICO:
             raise forms.ValidationError(
                 "Médicos não podem marcar consultas."
             )
@@ -67,7 +68,7 @@ class AgendamentoConsultaForm(forms.ModelForm):
         medico = cleaned.get('medico')
         paciente = cleaned.get('paciente')
 
-        if not paciente and self.user and self.user.role == 'paciente':
+        if not paciente and self.user and self.user.role == CustomUser.ROLE_PACIENTE:
             paciente = self.user
 
         if not data or not hora_str or not medico:
@@ -83,7 +84,7 @@ class AgendamentoConsultaForm(forms.ModelForm):
         total = AgendamentoConsulta.objects.filter(
             medico=medico,
             data_hora__date=data,
-            status='marcada'
+            status=AgendamentoConsulta.STATUS_MARCADA
         ).count()
 
         if total >= limite_diario:
@@ -94,7 +95,7 @@ class AgendamentoConsultaForm(forms.ModelForm):
         if AgendamentoConsulta.objects.filter(
             paciente=paciente,
             data_hora__gt=timezone.now(),
-            status='marcada'
+            status=AgendamentoConsulta.STATUS_MARCADA
         ).exists():
             raise forms.ValidationError(
                 "Você já possui uma consulta futura marcada."
@@ -113,7 +114,7 @@ class AgendamentoConsultaForm(forms.ModelForm):
         if AgendamentoConsulta.objects.filter(
             medico=medico,
             data_hora=data_hora,
-            status='marcada'
+            status=AgendamentoConsulta.STATUS_MARCADA
         ).exists():
             raise forms.ValidationError(
                 "Este horário já está ocupado."
@@ -122,7 +123,7 @@ class AgendamentoConsultaForm(forms.ModelForm):
         if AgendamentoConsulta.objects.filter(
             paciente=paciente,
             data_hora=data_hora,
-            status='marcada'
+            status=AgendamentoConsulta.STATUS_MARCADA
         ).exists():
             raise forms.ValidationError(
                 "Você já possui uma consulta marcada neste horário."

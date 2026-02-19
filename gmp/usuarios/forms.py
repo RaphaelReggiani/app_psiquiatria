@@ -1,6 +1,5 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
-from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
 from gmp.usuarios.models import CustomUser
 
@@ -44,15 +43,11 @@ class CustomUserCreationForm(UserCreationForm):
             self.fields.pop('role')
             return
 
-        if self.request_user.role == 'medico':
-            self.fields['role'].choices = [('paciente', 'Paciente')]
+        if self.request_user.role == CustomUser.ROLE_MEDICO:
+            self.fields['role'].choices = [(CustomUser.ROLE_PACIENTE, 'Paciente')]
 
-        if self.request_user.role == 'superadm':
-            self.fields['role'].choices = [
-                ('paciente', 'Paciente'),
-                ('medico', 'Médico'),
-                ('superadm', 'Super Administrador')
-            ]
+        if self.request_user.role == CustomUser.ROLE_SUPERADM:
+            self.fields['role'].choices = CustomUser.ROLE_CHOICES
 
 
 class CustomAuthenticationForm(forms.Form):
@@ -60,28 +55,16 @@ class CustomAuthenticationForm(forms.Form):
     email = forms.EmailField(label="E-mail")
     password = forms.CharField(label="Senha", widget=forms.PasswordInput)
 
-    def __init__(self, *args, **kwargs):
-        self.request = kwargs.pop("request", None)
-        super().__init__(*args, **kwargs)
-
     def clean(self):
-        email = self.cleaned_data.get("email")
-        password = self.cleaned_data.get("password")
+        cleaned_data = super().clean()
 
-        if email and password:
-            self.user = authenticate(
-                self.request,
-                username=email,
-                password=password
-            )
+        email = cleaned_data.get("email")
+        password = cleaned_data.get("password")
 
-            if self.user is None:
-                raise forms.ValidationError("E-mail ou senha inválidos.")
+        if not email or not password:
+            raise forms.ValidationError("Preencha todos os campos.")
 
-        return self.cleaned_data
-
-    def get_user(self):
-        return self.user
+        return cleaned_data
 
 
 class CustomUserChangeForm(UserChangeForm):
@@ -96,28 +79,28 @@ class CustomUserChangeForm(UserChangeForm):
         self.request_user = kwargs.pop('request_user', None)
         super().__init__(*args, **kwargs)
 
-        if self.request_user.role == 'paciente':
-            self.fields.pop('role')
+        if not self.request_user:
+            self.fields.pop('role', None)
             return
 
-        if self.request_user.role == 'medico':
-            self.fields.pop('role')
-            self.fields.pop('idade')
-            self.fields.pop('queixa')
+        if self.request_user.role == CustomUser.ROLE_PACIENTE:
+            self.fields.pop('role', None)
             return
 
-        if self.request_user.role == 'superadm':
-            self.fields['role'].choices = [
-                ('paciente', 'Paciente'),
-                ('medico', 'Médico'),
-                ('superadm', 'Super Administrador')
-            ]
+        if self.request_user.role == CustomUser.ROLE_MEDICO:
+            self.fields.pop('role', None)
+            self.fields.pop('idade', None)
+            self.fields.pop('queixa', None)
+            return
+
+        if self.request_user.role == CustomUser.ROLE_SUPERADM:
+            self.fields['role'].choices = CustomUser.ROLE_CHOICES
 
     def clean_role(self):
         if not self.request_user:
             return self.instance.role
 
-        if self.request_user.role != 'superadm':
+        if self.request_user.role != CustomUser.ROLE_SUPERADM:
             return self.instance.role
 
         return self.cleaned_data.get('role')

@@ -1,5 +1,6 @@
 import pytest
 from django.urls import reverse
+from gmp.usuarios.models import CustomUser
 
 
 @pytest.mark.django_db
@@ -11,12 +12,12 @@ class TestUserPermissions:
 
         url = reverse("users-detail", args=[paciente.id])
 
-        response = api_client.patch(url, {"role": "superadm"})
+        response = api_client.patch(url, {"role": CustomUser.ROLE_PACIENTE})
 
         paciente.refresh_from_db()
 
         assert response.status_code == 200
-        assert paciente.role == "paciente"
+        assert paciente.role == CustomUser.ROLE_PACIENTE
 
     def test_superadm_lista_todos_usuarios(self, api_client, superadm, paciente):
 

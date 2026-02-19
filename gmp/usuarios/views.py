@@ -2,28 +2,25 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied
 from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required
-
+from .models import CustomUser
+from .services import UserService
+from .exceptions import UserDomainException
 from .forms import (
     CustomUserCreationForm,
     CustomAuthenticationForm,
     CustomUserChangeForm
 )
+from functools import wraps
 
 
 def home(request):
     return render(request, 'gmp/home.html')
 
+
 def cadastro_view(request):
 
-    signup_form = CustomUserCreationForm(
-        request_user=request.user if request.user.is_authenticated else None
-    )
-
     if request.method == 'POST':
-
         signup_form = CustomUserCreationForm(
             request.POST,
             request.FILES,
@@ -31,15 +28,22 @@ def cadastro_view(request):
         )
 
         if signup_form.is_valid():
-            user = signup_form.save(commit=False)
+            try:
+                UserService.create_user(
+                    data=signup_form.cleaned_data,
+                    request_user=request.user
+                )
 
-            if not request.user.is_authenticated:
-                user.role = 'paciente'
+                messages.success(request, "Conta criada com sucesso.")
+                return redirect('login')
 
-            user.save()
+            except UserDomainException as e:
+                messages.error(request, str(e))
 
-            messages.success(request, "Conta criada com sucesso.")
-            return redirect('login')
+    else:
+        signup_form = CustomUserCreationForm(
+            request_user=request.user if request.user.is_authenticated else None
+        )
 
     return render(request, 'gmp/cadastro.html', {
         'signup_form': signup_form
@@ -47,7 +51,6 @@ def cadastro_view(request):
 
 
 def login_view(request):
-    login_form = CustomAuthenticationForm(request=request)
 
     if request.method == 'POST':
         login_form = CustomAuthenticationForm(
@@ -56,18 +59,29 @@ def login_view(request):
         )
 
         if login_form.is_valid():
-            user = login_form.get_user()
-            login(request, user)
-            messages.success(request, "Login realizado com sucesso.")
-            return redirect('home')
+            try:
+                user = UserService.authenticate_user(
+                    request=request,
+                    email=login_form.cleaned_data.get("email"),
+                    password=login_form.cleaned_data.get("password"),
+                )
 
-        messages.error(request, "E-mail ou senha inválido(s).")
+                login(request, user)
+                messages.success(request, "Login realizado com sucesso.")
+                return redirect('home')
+
+            except UserDomainException as e:
+                messages.error(request, str(e))
+
+    else:
+        login_form = CustomAuthenticationForm(request=request)
 
     return render(request, 'gmp/login.html', {
         'login_form': login_form
     })
 
 
+@login_required
 @require_POST
 def logout_view(request):
     logout(request)
@@ -75,11 +89,7 @@ def logout_view(request):
     return redirect('home')
 
 
-def login_required_view(request):
-    return render(request, 'gmp/login_required.html')
-
-
-@login_required(login_url='login_required')
+@login_required(login_url='login')
 def profile_view(request):
 
     if request.method == 'POST':
@@ -91,9 +101,18 @@ def profile_view(request):
         )
 
         if form.is_valid():
-            form.save()
-            messages.success(request, "Perfil atualizado.")
-            return redirect('perfil_usuario')
+            try:
+                UserService.update_user(
+                    instance=request.user,
+                    data=form.cleaned_data,
+                    request_user=request.user
+                )
+
+                messages.success(request, "Perfil atualizado.")
+                return redirect('perfil_usuario')
+
+            except UserDomainException as e:
+                messages.error(request, str(e))
 
     else:
         form = CustomUserChangeForm(
@@ -101,24 +120,34 @@ def profile_view(request):
             request_user=request.user
         )
 
-    return render(request, 'gmp/perfil_usuario.html', {'edit_form': form})
+    return render(request, 'gmp/perfil_usuario.html', {
+        'edit_form': form
+    })
 
 
 def superadmin_required(view):
+    @wraps(view)
     def wrapper(request, *args, **kwargs):
-        if not request.user.is_authenticated or request.user.role != 'superadm':
-            raise PermissionDenied
+        if not request.user.is_authenticated or request.user.role != CustomUser.ROLE_SUPERADM:
+            messages.error(request, "Acesso restrito.")
+            return redirect('home')
         return view(request, *args, **kwargs)
     return wrapper
 
 
 def medico_or_superadmin_required(view):
+    @wraps(view)
     def wrapper(request, *args, **kwargs):
         if not request.user.is_authenticated:
-            raise PermissionDenied
+            messages.error(request, "Você precisa estar logado.")
+            return redirect('login')
 
-        if request.user.role not in ['medico', 'superadm']:
-            raise PermissionDenied
+        if request.user.role not in [
+            CustomUser.ROLE_MEDICO,
+            CustomUser.ROLE_SUPERADM
+        ]:
+            messages.error(request, "Acesso restrito.")
+            return redirect('home')
 
         return view(request, *args, **kwargs)
     return wrapper
@@ -135,9 +164,17 @@ def staff_user_create(request):
         )
 
         if form.is_valid():
-            form.save()
-            messages.success(request, "Usuário criado com sucesso.")
-            return redirect('staff')
+            try:
+                UserService.create_user(
+                    data=form.cleaned_data,
+                    request_user=request.user
+                )
+
+                messages.success(request, "Usuário criado com sucesso.")
+                return redirect('staff')
+
+            except UserDomainException as e:
+                messages.error(request, str(e))
 
     else:
         form = CustomUserCreationForm(request_user=request.user)
@@ -145,3 +182,4 @@ def staff_user_create(request):
     return render(request, 'gmp/staff.html', {
         'signup_form': form
     })
+

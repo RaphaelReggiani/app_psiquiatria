@@ -14,7 +14,7 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('perfil_usuario/', views.profile_view, name='perfil_usuario'),
     path('staff/', views.staff_user_create, name='staff'),
-    path('perfil_usuario/login_required/', views.login_required_view, name='login_required'),
+    path('perfil_usuario/login_required/', views.login_required, name='login_required'),
 
     # Reset de senha
 

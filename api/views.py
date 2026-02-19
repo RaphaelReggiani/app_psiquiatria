@@ -3,7 +3,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from gmp.usuarios.models import CustomUser
+from gmp.usuarios.services import UserService
+from gmp.usuarios.exceptions import UserDomainException
 from gmp.consultas.models import Consulta, AgendamentoConsulta
+
+
 
 from .serializers import (
     UserSerializer,
@@ -36,19 +40,15 @@ class UserViewSet(viewsets.ModelViewSet):
 
         return [IsAuthenticated()]
 
-    def perform_create(self, serializer):
-
-        user = self.request.user
-
-        if not user.is_authenticated:
-            serializer.save(role='paciente')
-            return
-
-        if user.role == 'superadm':
-            serializer.save()
-            return
-
-        raise PermissionDenied("Você não tem permissão para criar usuários.")
+    def perform_update(self, serializer):
+        try:
+            UserService.update_user(
+                instance=self.get_object(),
+                data=serializer.validated_data,
+                request_user=self.request.user
+            )
+        except UserDomainException as e:
+            raise ValidationError(str(e))
 
     def get_queryset(self):
 
@@ -57,7 +57,7 @@ class UserViewSet(viewsets.ModelViewSet):
         if not user.is_authenticated:
             return CustomUser.objects.none()
 
-        if user.role == 'superadm':
+        if user.role == CustomUser.ROLE_SUPERADM:
             return CustomUser.objects.all()
 
         return CustomUser.objects.filter(id=user.id)
@@ -73,10 +73,10 @@ class ConsultaViewSet(viewsets.ModelViewSet):
 
         user = self.request.user
 
-        if user.role == 'superadm':
+        if user.role == CustomUser.ROLE_SUPERADM:
             return Consulta.objects.all()
 
-        if user.role == 'medico':
+        if user.role == CustomUser.ROLE_MEDICO:
             return Consulta.objects.filter(
                 agendamento__medico=user
             )
@@ -87,7 +87,6 @@ class ConsultaViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer):
-
         serializer.save()
 
     def update(self, request, *args, **kwargs):
@@ -106,10 +105,10 @@ class AgendamentoConsultaViewSet(viewsets.ModelViewSet):
 
         user = self.request.user
 
-        if user.role == 'superadm':
+        if user.role == CustomUser.ROLE_SUPERADM:
             return AgendamentoConsulta.objects.all()
 
-        if user.role == 'medico':
+        if user.role == CustomUser.ROLE_MEDICO:
             return AgendamentoConsulta.objects.filter(medico=user)
 
         return AgendamentoConsulta.objects.filter(paciente=user)
@@ -118,14 +117,14 @@ class AgendamentoConsultaViewSet(viewsets.ModelViewSet):
 
         user = self.request.user
 
-        if user.role == 'medico':
+        if user.role == CustomUser.ROLE_MEDICO:
             raise PermissionDenied("Médicos não podem marcar consultas.")
 
-        if user.role == 'paciente':
+        if user.role == CustomUser.ROLE_PACIENTE:
             serializer.save(paciente=user)
             return
 
-        if user.role == 'superadm':
+        if user.role == CustomUser.ROLE_SUPERADM:
             serializer.save()
             return
 

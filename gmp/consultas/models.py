@@ -96,10 +96,14 @@ class AgendamentoConsulta(models.Model):
 
 class Consulta(models.Model):
 
+    CONDICAO_PACIENTE_ESTAVEL = 'estavel'
+    CONDICAO_PACIENTE_INSTAVEL = 'instavel'
+    CONDICAO_PACIENTE_CRITICA = 'critica'
+
     CONDICAO_PACIENTE_CHOICES = [
-        ('estavel', 'Estável'),
-        ('instavel', 'Instável'),
-        ('critica', 'Crítica'),
+        (CONDICAO_PACIENTE_ESTAVEL, 'Estável'),
+        (CONDICAO_PACIENTE_INSTAVEL, 'Instável'),
+        (CONDICAO_PACIENTE_CRITICA, 'Crítica'),
     ]
 
     agendamento = models.OneToOneField(
