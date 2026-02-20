@@ -2,6 +2,7 @@ from django import forms
 from django.utils import timezone
 from datetime import datetime, time, timedelta
 from django.conf import settings
+from .constants import LIMITE_DIARIO_MEDICO, ANTECEDENCIA_MINIMA_HORAS, HORA_INICIO_ATENDIMENTO, HORA_FIM_ATENDIMENTO, INTERVALO_MINUTOS, DIA_UTIL_FINAL, FORMATO_HORA
 
 from gmp.usuarios.models import CustomUser
 
@@ -12,8 +13,8 @@ User = settings.AUTH_USER_MODEL
 
 HORARIOS_ATENDIMENTO = [
     time(h, m)
-    for h in range(8, 21)
-    for m in (0, 30)
+    for h in range(HORA_INICIO_ATENDIMENTO, HORA_FIM_ATENDIMENTO)
+    for m in INTERVALO_MINUTOS
 ]
 
 class AgendamentoConsultaForm(forms.ModelForm):
@@ -35,7 +36,7 @@ class AgendamentoConsultaForm(forms.ModelForm):
 
     hora = forms.ChoiceField(
         label="Horário",
-        choices=[(h.strftime('%H:%M'), h.strftime('%H:%M')) for h in HORARIOS_ATENDIMENTO]
+        choices=[(h.strftime(FORMATO_HORA), h.strftime(FORMATO_HORA)) for h in HORARIOS_ATENDIMENTO]
     )
 
     class Meta:
@@ -74,12 +75,10 @@ class AgendamentoConsultaForm(forms.ModelForm):
         if not data or not hora_str or not medico:
             raise forms.ValidationError("Preencha todos os campos.")
 
-        if data.weekday() >= 5:
+        if data.weekday() > DIA_UTIL_FINAL:
             raise forms.ValidationError(
                 "Consultas não são permitidas aos finais de semana."
             )
-        
-        limite_diario = 9
 
         total = AgendamentoConsulta.objects.filter(
             medico=medico,
@@ -87,7 +86,7 @@ class AgendamentoConsultaForm(forms.ModelForm):
             status=AgendamentoConsulta.STATUS_MARCADA
         ).count()
 
-        if total >= limite_diario:
+        if total >= LIMITE_DIARIO_MEDICO:
             raise forms.ValidationError(
                 "Este médico atingiu o limite de consultas para este dia."
             )
@@ -101,14 +100,14 @@ class AgendamentoConsultaForm(forms.ModelForm):
                 "Você já possui uma consulta futura marcada."
             )
 
-        hora = datetime.strptime(hora_str, "%H:%M").time()
-        data_hora = timezone.make_aware(datetime.combine(data, hora))
+        hora = datetime.strptime(hora_str, FORMATO_HORA).time()
+        data_hora = timezone.localtime(timezone.make_aware(datetime.combine(data, hora)))
 
         agora = timezone.now()
-        minimo = agora + timedelta(hours=2)
+        minimo = agora + timedelta(hours=ANTECEDENCIA_MINIMA_HORAS)
         if data_hora < minimo:
             raise forms.ValidationError(
-                "Horário inválido. Escolha um horário futuro com pelo menos 2 horas de antecedência."
+                f"Horário inválido. Escolha um horário futuro com pelo menos {ANTECEDENCIA_MINIMA_HORAS} horas de antecedência."
             )
 
         if AgendamentoConsulta.objects.filter(

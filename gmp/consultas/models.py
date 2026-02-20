@@ -166,6 +166,18 @@ class Consulta(models.Model):
 
 class ConsultaLog(models.Model):
 
+    STATUS_INICIAL = "-"
+    STATUS_RECEITA_GERADA = 'receita_gerada'
+
+    STATUS_LOG_CHOICES = [
+        (STATUS_INICIAL, 'Inicial'),
+        (AgendamentoConsulta.STATUS_MARCADA, 'Marcada'),
+        (AgendamentoConsulta.STATUS_REALIZADA, 'Realizada'),
+        (AgendamentoConsulta.STATUS_CANCELADA, 'Cancelada'),
+        (AgendamentoConsulta.STATUS_NAO_REALIZADA, 'Não Realizada'),
+        (STATUS_RECEITA_GERADA, 'Receita Gerada'),
+    ]
+
     consulta = models.ForeignKey(
         AgendamentoConsulta,
         on_delete=models.PROTECT,
@@ -178,8 +190,8 @@ class ConsultaLog(models.Model):
         null=True
     )
 
-    status_anterior = models.CharField(max_length=20)
-    status_novo = models.CharField(max_length=20)
+    status_anterior = models.CharField(max_length=20, choices=STATUS_LOG_CHOICES)
+    status_novo = models.CharField(max_length=20, choices=STATUS_LOG_CHOICES)
 
     criado_em = models.DateTimeField(auto_now_add=True)
 

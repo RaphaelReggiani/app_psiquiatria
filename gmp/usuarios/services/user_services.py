@@ -1,6 +1,6 @@
 from django.contrib.auth import authenticate
-from .models import CustomUser
-from .exceptions import (
+from ..models import CustomUser
+from ..exceptions import (
     InvalidRoleAssignment,
     UnauthorizedRoleChange,
     AuthenticationFailed,
