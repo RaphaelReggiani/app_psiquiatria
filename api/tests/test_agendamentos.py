@@ -4,6 +4,10 @@ from gmp.consultas.models import AgendamentoConsulta
 from django.utils import timezone
 import datetime
 
+from gmp.consultas.constants import (
+    STATUS_LABEL_MARCADA,
+)
+
 
 @pytest.mark.django_db
 class TestAgendamento:
@@ -61,7 +65,7 @@ class TestAgendamento:
             paciente=paciente2,
             medico=medico,
             data_hora=data_hora,
-            status="marcada"
+            status=STATUS_LABEL_MARCADA,
         )
 
         api_client.force_authenticate(user=paciente)

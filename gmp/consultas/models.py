@@ -1,9 +1,23 @@
-from django.db import models, transaction
-from django.db.models import Q
+from django.db import models
 from django.conf import settings
 from django.utils import timezone
-from datetime import timedelta
 import uuid
+
+from gmp.consultas.exceptions import ConsultaError
+
+from gmp.consultas.constants import (
+    MSG_ERRO_AGENDAMENTO_FINALIZADO_DELETE,
+    MSG_ERRO_CONSULTA_NAO_PODE_SER_DELETADA,
+    STATUS_LABEL_INICIAL,
+    STATUS_LABEL_MARCADA,
+    STATUS_LABEL_REALIZADA,
+    STATUS_LABEL_CANCELADA,
+    STATUS_LABEL_NAO_REALIZADA,
+    STATUS_LABEL_RECEITA_GERADA,
+    STATUS_LABEL_CONDICAO_PACIENTE_ESTAVEL,
+    STATUS_LABEL_CONDICAO_PACIENTE_INSTAVEL,
+    STATUS_LABEL_CONDICAO_PACIENTE_CRITICA,
+)
 
 
 User = settings.AUTH_USER_MODEL
@@ -11,16 +25,16 @@ User = settings.AUTH_USER_MODEL
 
 class AgendamentoConsulta(models.Model):
 
-    STATUS_MARCADA = 'marcada'
-    STATUS_REALIZADA = 'realizada'
-    STATUS_CANCELADA = 'cancelada'
-    STATUS_NAO_REALIZADA = 'nao_realizada'
+    STATUS_MARCADA = "marcada"
+    STATUS_REALIZADA = "realizada"
+    STATUS_CANCELADA = "cancelada"
+    STATUS_NAO_REALIZADA = "nao_realizada"
 
     STATUS_CHOICES = [
-        (STATUS_MARCADA, 'Marcada'),
-        (STATUS_REALIZADA, 'Realizada'),
-        (STATUS_CANCELADA, 'Cancelada'),
-        (STATUS_NAO_REALIZADA, 'Não Realizada'),
+        (STATUS_MARCADA, STATUS_LABEL_MARCADA),
+        (STATUS_REALIZADA, STATUS_LABEL_REALIZADA),
+        (STATUS_CANCELADA, STATUS_LABEL_CANCELADA),
+        (STATUS_NAO_REALIZADA, STATUS_LABEL_NAO_REALIZADA),
     ]
 
     paciente = models.ForeignKey(
@@ -90,20 +104,20 @@ class AgendamentoConsulta(models.Model):
             self.STATUS_REALIZADA,
             self.STATUS_NAO_REALIZADA
         ]:
-            raise Exception("Agendamento finalizado não pode ser deletado.")
+            raise ConsultaError(MSG_ERRO_AGENDAMENTO_FINALIZADO_DELETE)
         super().delete(*args, **kwargs)
 
 
 class Consulta(models.Model):
 
-    CONDICAO_PACIENTE_ESTAVEL = 'estavel'
-    CONDICAO_PACIENTE_INSTAVEL = 'instavel'
-    CONDICAO_PACIENTE_CRITICA = 'critica'
+    CONDICAO_PACIENTE_ESTAVEL = "estavel"
+    CONDICAO_PACIENTE_INSTAVEL = "instavel"
+    CONDICAO_PACIENTE_CRITICA = "critica"
 
     CONDICAO_PACIENTE_CHOICES = [
-        (CONDICAO_PACIENTE_ESTAVEL, 'Estável'),
-        (CONDICAO_PACIENTE_INSTAVEL, 'Instável'),
-        (CONDICAO_PACIENTE_CRITICA, 'Crítica'),
+        (CONDICAO_PACIENTE_ESTAVEL, STATUS_LABEL_CONDICAO_PACIENTE_ESTAVEL),
+        (CONDICAO_PACIENTE_INSTAVEL, STATUS_LABEL_CONDICAO_PACIENTE_INSTAVEL),
+        (CONDICAO_PACIENTE_CRITICA, STATUS_LABEL_CONDICAO_PACIENTE_CRITICA),
     ]
 
     agendamento = models.OneToOneField(
@@ -161,21 +175,21 @@ class Consulta(models.Model):
         return f"[{self.protocolo}] {self.agendamento}"
     
     def delete(self, *args, **kwargs):
-        raise Exception("Consulta não pode ser deletada.")
+        raise ConsultaError(MSG_ERRO_CONSULTA_NAO_PODE_SER_DELETADA)
 
 
 class ConsultaLog(models.Model):
 
     STATUS_INICIAL = "-"
-    STATUS_RECEITA_GERADA = 'receita_gerada'
+    STATUS_RECEITA_GERADA = "receita_gerada"
 
     STATUS_LOG_CHOICES = [
-        (STATUS_INICIAL, 'Inicial'),
-        (AgendamentoConsulta.STATUS_MARCADA, 'Marcada'),
-        (AgendamentoConsulta.STATUS_REALIZADA, 'Realizada'),
-        (AgendamentoConsulta.STATUS_CANCELADA, 'Cancelada'),
-        (AgendamentoConsulta.STATUS_NAO_REALIZADA, 'Não Realizada'),
-        (STATUS_RECEITA_GERADA, 'Receita Gerada'),
+        (STATUS_INICIAL, STATUS_LABEL_INICIAL),
+        (AgendamentoConsulta.STATUS_MARCADA, STATUS_LABEL_MARCADA),
+        (AgendamentoConsulta.STATUS_REALIZADA, STATUS_LABEL_REALIZADA),
+        (AgendamentoConsulta.STATUS_CANCELADA, STATUS_LABEL_CANCELADA),
+        (AgendamentoConsulta.STATUS_NAO_REALIZADA, STATUS_LABEL_NAO_REALIZADA),
+        (STATUS_RECEITA_GERADA, STATUS_LABEL_RECEITA_GERADA),
     ]
 
     consulta = models.ForeignKey(

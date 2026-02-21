@@ -30,9 +30,9 @@ class UserSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password', None)
 
         if request and not request.user.is_authenticated:
-            validated_data['role'] = 'paciente'
+            validated_data['role'] = CustomUser.ROLE_PACIENTE
 
-        if request and request.user.is_authenticated and request.user.role != 'superadm':
+        if request and request.user.is_authenticated and request.user.role != CustomUser.ROLE_SUPERADM:
             validated_data['role'] = request.user.role
 
         user = CustomUser(**validated_data)
@@ -48,7 +48,7 @@ class UserSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
 
         if request and 'role' in validated_data:
-            if request.user.role != 'superadm':
+            if request.user.role != CustomUser.ROLE_SUPERADM:
                 validated_data.pop('role')
 
         password = validated_data.pop('password', None)
@@ -81,7 +81,7 @@ class AgendamentoConsultaSerializer(serializers.ModelSerializer):
         ]
 
     def update(self, instance, validated_data):
-        if instance.status in ['realizada', 'nao_realizada']:
+        if instance.status in [AgendamentoConsulta.STATUS_REALIZADA, AgendamentoConsulta.STATUS_NAO_REALIZADA]:
             raise serializers.ValidationError(
                 "Agendamento finalizado não pode ser alterado."
             )
@@ -92,12 +92,12 @@ class AgendamentoConsultaSerializer(serializers.ModelSerializer):
         user = request.user
 
         if "status" in data:
-            if user.role not in ["medico", "superadm"]:
+            if user.role not in [CustomUser.ROLE_MEDICO, CustomUser.ROLE_SUPERADM]:
                 raise serializers.ValidationError(
                     "Você não pode alterar o status."
                 )
 
-            if user.role == "medico" and self.instance:
+            if user.role == CustomUser.ROLE_MEDICO and self.instance:
                 if self.instance.medico != user:
                     raise serializers.ValidationError(
                         "Você não pode alterar agendamento de outro médico."
@@ -120,6 +120,10 @@ class ConsultaSerializer(serializers.ModelSerializer):
             'id',
             'protocolo',
             'criado_em',
+            'crm_medico',
+            'descricao_receita',
+            'data_geracao_receita',
+            'receita_pdf',
         ]
 
     def validate(self, data):
@@ -145,7 +149,7 @@ class ConsultaSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
 
         user = request.user
-        if user.role != 'medico':
+        if user.role != CustomUser.ROLE_MEDICO:
             raise serializers.ValidationError(
                 "Apenas médicos podem registrar consultas."
             )
@@ -154,7 +158,7 @@ class ConsultaSerializer(serializers.ModelSerializer):
                 "Você não pode registrar consulta de outro médico."
             )
 
-        if value.status != 'realizada':
+        if value.status != AgendamentoConsulta.STATUS_REALIZADA:
             raise serializers.ValidationError(
                 "Consulta só pode ser registrada para agendamento realizado."
             )

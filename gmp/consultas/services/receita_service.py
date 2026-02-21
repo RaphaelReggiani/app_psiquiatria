@@ -6,7 +6,6 @@ from reportlab.lib.units import inch
 from reportlab.graphics.barcode import qr
 from reportlab.graphics.shapes import Drawing
 from django.utils import timezone
-from django.http import HttpResponse
 from django.db import transaction
 
 from gmp.consultas.models import ConsultaLog, AgendamentoConsulta
@@ -15,7 +14,14 @@ from gmp.consultas.exceptions import (
     DadosReceitaInvalidosError,
     ConsultaStatusInvalidoError
 )
-from gmp.consultas.constants import FORMATO_DATA, FORMATO_HORA
+
+from gmp.consultas.constants import (
+    FORMATO_DATA, 
+    FORMATO_HORA,
+    MSG_ERRO_SEM_PERMISSAO,
+    MSG_ERRO_RECEITA_NAO_PERMITIDA,
+    MSG_ERRO_CRM_DESCRICAO_OBRIGATORIOS,
+)
 
 
 def gerar_receita_pdf(agendamento, medico_nome, crm, descricao):
@@ -30,9 +36,7 @@ def gerar_receita_pdf(agendamento, medico_nome, crm, descricao):
         AgendamentoConsulta.STATUS_MARCADA,
         AgendamentoConsulta.STATUS_REALIZADA
     ]:
-        raise ConsultaStatusInvalidoError(
-            "Esta consulta não permite geração de receita."
-        )
+        raise ConsultaStatusInvalidoError(MSG_ERRO_RECEITA_NAO_PERMITIDA)
 
     buffer = BytesIO()
 
@@ -107,16 +111,16 @@ def gerar_receita_pdf(agendamento, medico_nome, crm, descricao):
 def gerar_receita_preview_service(agendamento, usuario, crm, descricao):
 
     if usuario.role != usuario.ROLE_MEDICO:
-        raise ConsultaError("Apenas médicos podem gerar receitas.")
+        raise ConsultaError(MSG_ERRO_SEM_PERMISSAO)
 
     if agendamento.medico != usuario:
-        raise ConsultaError("Você não tem permissão para esta consulta.")
+        raise ConsultaError(MSG_ERRO_SEM_PERMISSAO)
 
     if agendamento.status != AgendamentoConsulta.STATUS_MARCADA:
-        raise ConsultaError("Esta consulta não permite gerar receita.")
+        raise ConsultaError(MSG_ERRO_RECEITA_NAO_PERMITIDA)
 
     if not crm or not descricao:
-        raise ConsultaError("CRM e descrição são obrigatórios.")
+        raise ConsultaError(MSG_ERRO_CRM_DESCRICAO_OBRIGATORIOS)
 
     pdf_buffer = gerar_receita_pdf(
         agendamento=agendamento,
@@ -134,3 +138,25 @@ def gerar_receita_preview_service(agendamento, usuario, crm, descricao):
         )
 
     return pdf_buffer
+
+
+def validar_visualizacao_receita_service(agendamento, usuario):
+
+    if not hasattr(agendamento, 'consulta'):
+        raise ConsultaError(MSG_ERRO_SEM_PERMISSAO)
+
+    if usuario.role == usuario.ROLE_PACIENTE:
+        if agendamento.paciente != usuario:
+            raise ConsultaError(MSG_ERRO_SEM_PERMISSAO)
+
+        if agendamento.status != AgendamentoConsulta.STATUS_REALIZADA:
+            raise ConsultaError(MSG_ERRO_SEM_PERMISSAO)
+
+    elif usuario.role == usuario.ROLE_MEDICO:
+        if agendamento.medico != usuario:
+            raise ConsultaError(MSG_ERRO_SEM_PERMISSAO)
+
+    else:
+        raise ConsultaError(MSG_ERRO_SEM_PERMISSAO)
+
+    return agendamento.consulta

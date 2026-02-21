@@ -8,10 +8,6 @@ from django.utils.timezone import localdate
 from django.core.paginator import Paginator
 from django.contrib.auth import get_user_model
 
-from gmp.consultas.services.cache_service import (
-    get_cache, 
-    set_cache
-)
 from gmp.consultas.services.consulta_service import (
     cancelar_consulta_service, 
     registrar_consulta_service, 
@@ -22,9 +18,7 @@ from gmp.consultas.services.horarios_service import (
 )
 from gmp.consultas.services.receita_service import ( 
     gerar_receita_preview_service,
-)
-from gmp.consultas.services.log_service import (
-    registrar_log,
+    validar_visualizacao_receita_service,
 )
 
 from gmp.consultas.exceptions import ConsultaError
@@ -42,18 +36,16 @@ from .selectors import (
     consulta_marcada_por_id,
     consulta_por_id,
 )
-from .constants import (
-    CACHE_TIMEOUT_HORARIOS,
-    ANTECEDENCIA_MINIMA_HORAS,
-    HORA_INICIO_ATENDIMENTO,
-    HORA_FIM_ATENDIMENTO,
-    INTERVALO_MINUTOS,
+from gmp.consultas.constants import (
     PAGINACAO_PADRAO,
-    DIA_UTIL_FINAL,
-    FORMATO_DATA,
-    FORMATO_HORA
+    MSG_CONSULTA_MARCADA_SUCESSO,
+    MSG_CONSULTA_CANCELADA_SUCESSO,
+    MSG_CONSULTA_REGISTRADA_SUCESSO,
+    MSG_ERRO_SEM_PERMISSAO,
+    MSG_INFO_SEM_CONSULTAS_FILTRO,
+    MSG_INFO_SEM_PACIENTES_QUEIXA,
 )
-from .utils.cache_keys import horarios_medico_key
+
 from .decorators import role_required
 
 
@@ -77,7 +69,7 @@ def marcar_consulta(request):
         if form.is_valid():
             try:
                 marcar_consulta_service(form, request.user)
-                messages.success(request, "Consulta marcada com sucesso.")
+                messages.success(request, MSG_CONSULTA_MARCADA_SUCESSO)
                 return redirect('minhas_consultas')
             except ConsultaError as e:
                 messages.error(request, str(e))
@@ -121,7 +113,7 @@ def agenda_medico(request):
     )
 
     if (data or paciente_id or queixa or status) and not consultas.exists():
-        messages.info(request, "Não há consultas registradas com estes parâmetros.")
+        messages.info(request, MSG_INFO_SEM_CONSULTAS_FILTRO)
 
     pacientes = pacientes_com_consulta_realizada_do_medico(request.user)
 
@@ -177,7 +169,7 @@ def cadastrar_consulta(request, agendamento_id):
         if form.is_valid():
             try:
                 registrar_consulta_service(agendamento, form, request.user)
-                messages.success(request, "Consulta registrada com sucesso.")
+                messages.success(request, MSG_CONSULTA_REGISTRADA_SUCESSO)
                 return redirect('agenda_medico')
             except ConsultaError as e:
                 messages.error(request, str(e))
@@ -201,7 +193,7 @@ def cancelar_consulta(request, consulta_id):
 
     try:
         cancelar_consulta_service(consulta, request.user)
-        messages.success(request, "Consulta cancelada com sucesso.")
+        messages.success(request, MSG_CONSULTA_CANCELADA_SUCESSO)
     except ConsultaError as e:
         messages.error(request, str(e))
 
@@ -215,7 +207,7 @@ def cancelar_consulta(request, consulta_id):
 def historico_medico_consultas(request):
 
     if not medico_ou_superadmin(request.user):
-        raise PermissionDenied
+        raise PermissionDenied(MSG_ERRO_SEM_PERMISSAO)
 
     consultas = consultas_realizadas_por_medico(request.user)
 
@@ -237,10 +229,7 @@ def historico_medico_consultas(request):
     pacientes = pacientes_com_consulta_realizada_do_medico(request.user)
 
     if (data or paciente_id or queixa) and not consultas.exists():
-        messages.info(
-            request,
-            "Não há consultas registradas com estes parâmetros."
-        )
+        messages.info(request, MSG_INFO_SEM_CONSULTAS_FILTRO)
 
     paginator = Paginator(consultas, PAGINACAO_PADRAO)
     page_number = request.GET.get('page')
@@ -257,7 +246,7 @@ def historico_medico_consultas(request):
 def medico_pacientes(request):
 
     if not medico_ou_superadmin(request.user):
-        raise PermissionDenied
+        raise PermissionDenied(MSG_ERRO_SEM_PERMISSAO)
 
     queixa = request.GET.get('queixa')
 
@@ -267,10 +256,7 @@ def medico_pacientes(request):
         pacientes = pacientes.filter(queixa=queixa)
 
     if queixa and not pacientes.exists():
-        messages.info(
-            request,
-            "Nenhum paciente encontrado com essa queixa."
-        )
+        messages.info(request, MSG_INFO_SEM_PACIENTES_QUEIXA)
 
     return render(request, 'gmp/medico_pacientes.html', {
         'pacientes': pacientes,
@@ -285,22 +271,13 @@ def visualizar_receita(request, consulta_id):
         consulta_por_id(consulta_id)
     )
 
-    if not hasattr(agendamento, 'consulta'):
-        raise PermissionDenied
-
-    consulta = agendamento.consulta
-
-    if request.user.role == CustomUser.ROLE_PACIENTE:
-        if agendamento.paciente != request.user:
-            raise PermissionDenied
-        if agendamento.status != AgendamentoConsulta.STATUS_REALIZADA:
-            raise PermissionDenied
-
-    elif request.user.role == CustomUser.ROLE_MEDICO:
-        if agendamento.medico != request.user:
-            raise PermissionDenied
-    else:
-        raise PermissionDenied
+    try:
+        consulta = validar_visualizacao_receita_service(
+            agendamento,
+            request.user
+        )
+    except ConsultaError as e:
+        raise PermissionDenied(str(e))
 
     return render(request, 'gmp/receita.html', {
         'consulta': consulta

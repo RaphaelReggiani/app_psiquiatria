@@ -1,3 +1,9 @@
+from gmp.consultas.constants import (
+    MSG_ERRO_AGENDAMENTO_FINALIZADO_DELETE,
+    MSG_ERRO_CONSULTA_NAO_PODE_SER_DELETADA,
+)
+
+
 
 class ConsultaError(Exception):
     """

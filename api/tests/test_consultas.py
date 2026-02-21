@@ -19,7 +19,7 @@ class TestConsulta:
             paciente=paciente,
             medico=medico,
             data_hora=data_hora,
-            status="realizada",
+            status=AgendamentoConsulta.STATUS_REALIZADA,
         )
 
         receita_pdf = SimpleUploadedFile(
@@ -36,7 +36,7 @@ class TestConsulta:
             url,
             {
                 "agendamento": agendamento.id,
-                "condicao_paciente": "estavel",
+                "condicao_paciente": Consulta.CONDICAO_PACIENTE_ESTAVEL,
                 "descricao": "Consulta teste",
                 "receita": receita_pdf,
             },
@@ -59,7 +59,7 @@ class TestConsulta:
 
         response = api_client.post(url, {
             "agendamento": 1,
-            "condicao_paciente": "Instável",
+            "condicao_paciente": Consulta.CONDICAO_PACIENTE_ESTAVEL,
             "descricao": "Tentativa inválida",
             "receita": "Nenhuma",
         })
@@ -79,7 +79,7 @@ class TestConsulta:
             paciente=paciente,
             medico=medico,
             data_hora=data_hora,
-            status="marcada",
+            status=AgendamentoConsulta.STATUS_REALIZADA,
         )
 
         api_client.force_authenticate(user=medico)
@@ -88,7 +88,7 @@ class TestConsulta:
 
         response = api_client.post(url, {
             "agendamento": agendamento.id,
-            "condicao_paciente": "Estável",
+            "condicao_paciente": Consulta.CONDICAO_PACIENTE_ESTAVEL,
             "descricao": "Erro esperado",
             "receita": "Nenhuma",
         })
@@ -113,7 +113,7 @@ class TestConsulta:
             paciente=paciente,
             medico=outro_medico,
             data_hora=data_hora,
-            status="realizada",
+            status=AgendamentoConsulta.STATUS_REALIZADA,
         )
 
         receita_pdf = SimpleUploadedFile(
@@ -128,7 +128,7 @@ class TestConsulta:
             reverse("consultas-list"),
             {
                 "agendamento": agendamento.id,
-                "condicao_paciente": "estavel",
+                "condicao_paciente": Consulta.CONDICAO_PACIENTE_ESTAVEL,
                 "descricao": "Tentativa inválida",
                 "receita": receita_pdf,
             },
@@ -149,7 +149,7 @@ class TestConsulta:
             paciente=paciente,
             medico=medico,
             data_hora=data_hora,
-            status="realizada",
+            status=AgendamentoConsulta.STATUS_REALIZADA,
         )
 
         receita_pdf = SimpleUploadedFile(
@@ -160,7 +160,7 @@ class TestConsulta:
 
         Consulta.objects.create(
             agendamento=agendamento,
-            condicao_paciente="estavel",
+            condicao_paciente=Consulta.CONDICAO_PACIENTE_ESTAVEL,
             descricao="Primeira",
             receita=receita_pdf,
         )
@@ -177,7 +177,7 @@ class TestConsulta:
             reverse("consultas-list"),
             {
                 "agendamento": agendamento.id,
-                "condicao_paciente": "estavel",
+                "condicao_paciente": Consulta.CONDICAO_PACIENTE_ESTAVEL,
                 "descricao": "Segunda tentativa",
                 "receita": nova_receita,
             },
@@ -198,7 +198,7 @@ class TestConsulta:
             paciente=paciente,
             medico=medico,
             data_hora=data_passada,
-            status="realizada",
+            status=AgendamentoConsulta.STATUS_REALIZADA,
         )
 
         receita_pdf = SimpleUploadedFile(
@@ -213,7 +213,7 @@ class TestConsulta:
             reverse("consultas-list"),
             {
                 "agendamento": agendamento.id,
-                "condicao_paciente": "estavel",
+                "condicao_paciente": Consulta.CONDICAO_PACIENTE_ESTAVEL,
                 "descricao": "Consulta inválida",
                 "receita": receita_pdf,
             },
@@ -233,7 +233,7 @@ class TestConsulta:
             paciente=paciente,
             medico=medico,
             data_hora=data_hora,
-            status="realizada",
+            status=AgendamentoConsulta.STATUS_REALIZADA,
         )
 
         arquivo_txt = SimpleUploadedFile(
@@ -248,7 +248,7 @@ class TestConsulta:
             reverse("consultas-list"),
             {
                 "agendamento": agendamento.id,
-                "condicao_paciente": "estavel",
+                "condicao_paciente": Consulta.CONDICAO_PACIENTE_ESTAVEL,
                 "descricao": "Upload inválido",
                 "receita": arquivo_txt,
             },
@@ -268,7 +268,7 @@ class TestConsulta:
             paciente=paciente,
             medico=medico,
             data_hora=data_hora,
-            status="realizada",
+            status=AgendamentoConsulta.STATUS_REALIZADA,
         )
 
         receita_pdf = SimpleUploadedFile(
@@ -281,7 +281,7 @@ class TestConsulta:
             reverse("consultas-list"),
             {
                 "agendamento": agendamento.id,
-                "condicao_paciente": "estavel",
+                "condicao_paciente": Consulta.CONDICAO_PACIENTE_ESTAVEL,
                 "descricao": "Sem login",
                 "receita": receita_pdf,
             },
@@ -301,7 +301,7 @@ class TestConsulta:
             paciente=paciente,
             medico=medico,
             data_hora=data_hora,
-            status="cancelada",
+            status=AgendamentoConsulta.STATUS_CANCELADA,
         )
 
         receita_pdf = SimpleUploadedFile(
@@ -316,7 +316,7 @@ class TestConsulta:
             reverse("consultas-list"),
             {
                 "agendamento": agendamento.id,
-                "condicao_paciente": "estavel",
+                "condicao_paciente": Consulta.CONDICAO_PACIENTE_ESTAVEL,
                 "descricao": "Erro esperado",
                 "receita": receita_pdf,
             },
@@ -336,7 +336,7 @@ class TestConsulta:
             paciente=paciente,
             medico=medico,
             data_hora=data_hora,
-            status="realizada",
+            status=AgendamentoConsulta.STATUS_REALIZADA,
         )
 
         receita_pdf = SimpleUploadedFile(
@@ -347,7 +347,7 @@ class TestConsulta:
 
         consulta = Consulta.objects.create(
             agendamento=agendamento,
-            condicao_paciente="estavel",
+            condicao_paciente=Consulta.CONDICAO_PACIENTE_ESTAVEL,
             descricao="Original",
             receita=receita_pdf,
         )
@@ -378,7 +378,7 @@ class TestConsulta:
             paciente=outro_paciente,
             medico=medico,
             data_hora=data_hora,
-            status="realizada",
+            status=AgendamentoConsulta.STATUS_REALIZADA,
         )
 
         receita_pdf = SimpleUploadedFile(
@@ -389,7 +389,7 @@ class TestConsulta:
 
         Consulta.objects.create(
             agendamento=agendamento,
-            condicao_paciente="estavel",
+            condicao_paciente=Consulta.CONDICAO_PACIENTE_ESTAVEL,
             descricao="Privada",
             receita=receita_pdf,
         )
@@ -412,7 +412,7 @@ class TestConsulta:
             paciente=paciente,
             medico=medico,
             data_hora=data_hora,
-            status="realizada",
+            status=AgendamentoConsulta.STATUS_REALIZADA,
         )
 
         arquivo_grande = SimpleUploadedFile(
@@ -427,7 +427,7 @@ class TestConsulta:
             reverse("consultas-list"),
             {
                 "agendamento": agendamento.id,
-                "condicao_paciente": "estavel",
+                "condicao_paciente": Consulta.CONDICAO_PACIENTE_ESTAVEL,
                 "descricao": "Grande",
                 "receita": arquivo_grande,
             },
