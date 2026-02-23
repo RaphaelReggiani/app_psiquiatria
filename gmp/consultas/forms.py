@@ -1,10 +1,17 @@
 from django import forms
 from django.utils import timezone
-from datetime import datetime, time, timedelta
+from datetime import (
+    datetime, 
+    time, 
+    timedelta,
+)
 
 from gmp.usuarios.models import CustomUser
 
-from .models import Consulta, AgendamentoConsulta
+from .models import (
+    Consulta, 
+    AgendamentoConsulta,
+)
 
 from gmp.consultas.constants import (
     LIMITE_DIARIO_MEDICO, 

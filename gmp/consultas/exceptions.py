@@ -1,15 +1,21 @@
-from gmp.consultas.constants import (
-    MSG_ERRO_AGENDAMENTO_FINALIZADO_DELETE,
-    MSG_ERRO_CONSULTA_NAO_PODE_SER_DELETADA,
+from gmp.consultas.constants.messages_constants import (
+    MSG_ERRO_SEM_PERMISSAO,
+    MSG_ERRO_NAO_PODE_CANCELAR_PASSADA,
+    MSG_ERRO_HORARIO_OCUPADO,
+    MSG_ERRO_CRM_DESCRICAO_OBRIGATORIOS,
+    MSG_ERRO_ANTECEDENCIA_MINIMA,
+    MSG_ERRO_CONSULTA,
+    MSG_ERRO_STATUS_INVALIDO,
+    MSG_ERRO_CONSULTA_NAO_MARCADA,
+    MSG_ERRO_CONSULTA_NAO_REALIZADA,
+    MSG_ERRO_CONSULTA_JA_CANCELADA,
+    MSG_ERRO_CONSULTA_NAO_ENCONTRADA
 )
 
 
-
 class ConsultaError(Exception):
-    """
-    Exceção base para erros relacionados ao domínio de consultas.
-    """
-    default_message = "Ocorreu um erro relacionado à consulta."
+
+    default_message = MSG_ERRO_CONSULTA
 
     def __init__(self, message=None):
         self.message = message or self.default_message
@@ -20,40 +26,40 @@ class ConsultaError(Exception):
 
 
 class ConsultaStatusInvalidoError(ConsultaError):
-    default_message = "Esta consulta não permite esta operação."
+    default_message = MSG_ERRO_STATUS_INVALIDO
 
 
 class ConsultaNaoMarcadaError(ConsultaError):
-    default_message = "A consulta não está marcada."
+    default_message = MSG_ERRO_CONSULTA_NAO_MARCADA
 
 
 class ConsultaNaoRealizadaError(ConsultaError):
-    default_message = "A consulta ainda não foi realizada."
+    default_message = MSG_ERRO_CONSULTA_NAO_REALIZADA
 
 
 class ConsultaJaCanceladaError(ConsultaError):
-    default_message = "A consulta já foi cancelada."
+    default_message = MSG_ERRO_CONSULTA_JA_CANCELADA
 
 
 class ConsultaPassadaError(ConsultaError):
-    default_message = "Não é possível realizar esta operação em consulta passada."
+    default_message = MSG_ERRO_NAO_PODE_CANCELAR_PASSADA
 
 
 class ConsultaPermissaoNegadaError(ConsultaError):
-    default_message = "Você não tem permissão para realizar esta ação."
+    default_message = MSG_ERRO_SEM_PERMISSAO
 
 
 class AntecedenciaInsuficienteError(ConsultaError):
-    default_message = "A consulta deve respeitar a antecedência mínima permitida."
+    default_message = MSG_ERRO_ANTECEDENCIA_MINIMA
 
 
 class HorarioIndisponivelError(ConsultaError):
-    default_message = "O horário selecionado não está disponível."
+    default_message = MSG_ERRO_HORARIO_OCUPADO
 
 
 class DadosReceitaInvalidosError(ConsultaError):
-    default_message = "Os dados da receita são inválidos ou incompletos."
+    default_message = MSG_ERRO_CRM_DESCRICAO_OBRIGATORIOS
 
 
 class ConsultaNaoEncontradaError(ConsultaError):
-    default_message = "Consulta não encontrada."
+    default_message = MSG_ERRO_CONSULTA_NAO_ENCONTRADA

@@ -1,13 +1,20 @@
 from rest_framework import viewsets
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.permissions import (
+    AllowAny, 
+    IsAuthenticated,
+)
+from rest_framework.exceptions import (
+    PermissionDenied, 
+    ValidationError,
+)
 
 from gmp.usuarios.models import CustomUser
-from gmp.usuarios.services import UserService
+from gmp.usuarios.services.user_services import UserService
 from gmp.usuarios.exceptions import UserDomainException
-from gmp.consultas.models import Consulta, AgendamentoConsulta
-
-
+from gmp.consultas.models import (
+    Consulta, 
+    AgendamentoConsulta,
+)
 
 from .serializers import (
     UserSerializer,
@@ -19,6 +26,16 @@ from .permissions import (
     IsUserOwnerOrSuperAdmin,
     IsAgendamentoOwnerOrSuperAdmin,
     IsConsultaOwnerOrSuperAdmin
+)
+
+from gmp.consultas.constants import (
+    STATUS_REALIZADA,
+)
+
+from api.constants import (
+    API_ERROR_CONSULTA_UPDATE_NOT_ALLOWED,
+    API_ERROR_MEDICO_NAO_PODE_MARCAR,
+    API_ERROR_SEM_PERMISSAO,
 )
 
 
@@ -34,9 +51,6 @@ class UserViewSet(viewsets.ModelViewSet):
 
         if self.action in ['retrieve', 'update', 'partial_update']:
             return [IsUserOwnerOrSuperAdmin()]
-
-        if self.action == 'list':
-            return [IsAuthenticated()]
 
         return [IsAuthenticated()]
 
@@ -83,17 +97,17 @@ class ConsultaViewSet(viewsets.ModelViewSet):
 
         return Consulta.objects.filter(
             agendamento__paciente=user,
-            agendamento__status='realizada'
+            agendamento__status=STATUS_REALIZADA,
         )
 
     def perform_create(self, serializer):
         serializer.save()
 
     def update(self, request, *args, **kwargs):
-        raise ValidationError("Consulta não pode ser editada após criação.")
+        raise ValidationError(API_ERROR_CONSULTA_UPDATE_NOT_ALLOWED)
 
     def partial_update(self, request, *args, **kwargs):
-        raise ValidationError("Consulta não pode ser editada após criação.")
+        raise ValidationError(API_ERROR_CONSULTA_UPDATE_NOT_ALLOWED)
 
 
 class AgendamentoConsultaViewSet(viewsets.ModelViewSet):
@@ -118,7 +132,7 @@ class AgendamentoConsultaViewSet(viewsets.ModelViewSet):
         user = self.request.user
 
         if user.role == CustomUser.ROLE_MEDICO:
-            raise PermissionDenied("Médicos não podem marcar consultas.")
+            raise PermissionDenied(API_ERROR_MEDICO_NAO_PODE_MARCAR)
 
         if user.role == CustomUser.ROLE_PACIENTE:
             serializer.save(paciente=user)
@@ -128,5 +142,5 @@ class AgendamentoConsultaViewSet(viewsets.ModelViewSet):
             serializer.save()
             return
 
-        raise PermissionDenied("Sem permissão.")
+        raise PermissionDenied(API_ERROR_SEM_PERMISSAO)
 

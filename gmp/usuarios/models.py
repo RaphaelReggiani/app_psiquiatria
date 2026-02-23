@@ -1,17 +1,51 @@
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
+from django.contrib.auth.models import (
+    AbstractBaseUser, 
+    PermissionsMixin, 
+    BaseUserManager
+)
+
 from django.db import models
 from django.utils import timezone
-from django.core.validators import MinValueValidator, MaxValueValidator
+
+from django.core.validators import (
+    MinValueValidator, 
+    MaxValueValidator,
+)
+
+from gmp.usuarios.constants import (
+    MAX_LENGTH_NOME,
+    MAX_LENGTH_ROLE,
+    MAX_LENGTH_QUEIXA,
+    MAX_LENGTH_TELEFONE,
+    MAX_LENGTH_ORIGEM,
+    IDADE_MINIMA,
+    IDADE_MAXIMA,
+    UPLOAD_FOTO_PERFIL_PATH,
+    LABEL_PACIENTE,
+    LABEL_MEDICO,
+    LABEL_SUPERADM,
+    LABEL_QUEIXA_DEPRESSAO,
+    LABEL_QUEIXA_ANSIEDADE,
+    LABEL_QUEIXA_TAG,
+    LABEL_QUEIXA_TOC,
+    LABEL_QUEIXA_BIPOLARIDADE,
+    LABEL_QUEIXA_ESQUIZOFRENIA,
+    LABEL_QUEIXA_OUTROS,
+    MSG_VALUE_ERROR_INFORME_EMAIL,
+    MSG_VALUE_ERROR_SENHA_OBRIGATORIA,
+    MSG_VALUE_ERROR_SUPERUSER_IS_STAFF,
+    MSG_VALUE_ERROR_SUPERUSER_IS_SUPERUSER
+)
 
 
 class CustomUserManager(BaseUserManager):
 
     def create_user(self, email, password=None, role=None, **extra_fields):
         if not email:
-            raise ValueError("Informe um e-mail.")
+            raise ValueError(MSG_VALUE_ERROR_INFORME_EMAIL)
 
         if not password:
-            raise ValueError("Senha é obrigatória.")
+            raise ValueError(MSG_VALUE_ERROR_SENHA_OBRIGATORIA)
 
         email = self.normalize_email(email)
 
@@ -34,10 +68,10 @@ class CustomUserManager(BaseUserManager):
         extra_fields.setdefault("is_superuser", True)
 
         if extra_fields.get("is_staff") is not True:
-            raise ValueError("Superuser precisa ter is_staff=True.")
+            raise ValueError(MSG_VALUE_ERROR_SUPERUSER_IS_STAFF)
 
         if extra_fields.get("is_superuser") is not True:
-            raise ValueError("Superuser precisa ter is_superuser=True.")
+            raise ValueError(MSG_VALUE_ERROR_SUPERUSER_IS_SUPERUSER)
 
         return self.create_user(
             email=email,
@@ -54,9 +88,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     ROLE_SUPERADM = 'superadm'
 
     ROLE_CHOICES = [
-        (ROLE_PACIENTE, 'Paciente'),
-        (ROLE_MEDICO, 'Médico'),
-        (ROLE_SUPERADM, 'Super Administrador'),
+        (ROLE_PACIENTE, LABEL_PACIENTE),
+        (ROLE_MEDICO, LABEL_MEDICO),
+        (ROLE_SUPERADM, LABEL_SUPERADM),
     ]
 
     QUEIXA_DEPRESSAO = 'depressao'
@@ -68,23 +102,23 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     QUEIXA_OUTROS = 'outros'
 
     QUEIXA_CHOICES = [
-        (QUEIXA_DEPRESSAO, 'Depressão'),
-        (QUEIXA_ANSIEDADE, 'Ansiedade'),
-        (QUEIXA_TAG, 'TAG'),
-        (QUEIXA_TOC, 'TOC'),
-        (QUEIXA_BIPOLARIDADE, 'Bipolaridade'),
-        (QUEIXA_ESQUIZOFRENIA, 'Esquizofrenia'),
-        (QUEIXA_OUTROS, 'Outros'),
+        (QUEIXA_DEPRESSAO, LABEL_QUEIXA_DEPRESSAO),
+        (QUEIXA_ANSIEDADE, LABEL_QUEIXA_ANSIEDADE),
+        (QUEIXA_TAG, LABEL_QUEIXA_TAG),
+        (QUEIXA_TOC, LABEL_QUEIXA_TOC),
+        (QUEIXA_BIPOLARIDADE, LABEL_QUEIXA_BIPOLARIDADE),
+        (QUEIXA_ESQUIZOFRENIA, LABEL_QUEIXA_ESQUIZOFRENIA),
+        (QUEIXA_OUTROS, LABEL_QUEIXA_OUTROS),
     ]
 
-    nome = models.CharField(max_length=255, blank=True, null=True)
+    nome = models.CharField(max_length=MAX_LENGTH_NOME, blank=True, null=True)
     email = models.EmailField(unique=True, blank=False, null=False)
-    idade = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(85)], blank=True, null=True)
-    queixa = models.CharField(max_length=30, choices=QUEIXA_CHOICES, default=QUEIXA_DEPRESSAO, db_index=True)
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default=ROLE_PACIENTE, db_index=True)
-    telefone = models.CharField(max_length=20, blank=True, null=True)
-    origem = models.CharField(max_length=50, blank=True, null=True)
-    foto_perfil = models.ImageField(upload_to='foto_perfil/', blank=True, null=True)
+    idade = models.PositiveIntegerField(validators=[MinValueValidator(IDADE_MINIMA), MaxValueValidator(IDADE_MAXIMA)], blank=True, null=True)
+    queixa = models.CharField(max_length=MAX_LENGTH_QUEIXA, choices=QUEIXA_CHOICES, default=QUEIXA_DEPRESSAO, db_index=True)
+    role = models.CharField(max_length=MAX_LENGTH_ROLE, choices=ROLE_CHOICES, default=ROLE_PACIENTE, db_index=True)
+    telefone = models.CharField(max_length=MAX_LENGTH_TELEFONE, blank=True, null=True)
+    origem = models.CharField(max_length=MAX_LENGTH_ORIGEM, blank=True, null=True)
+    foto_perfil = models.ImageField(upload_to=UPLOAD_FOTO_PERFIL_PATH, blank=True, null=True)
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)

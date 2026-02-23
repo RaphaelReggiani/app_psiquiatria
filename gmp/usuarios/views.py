@@ -1,9 +1,14 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth import login, logout
+from django.shortcuts import (
+    render, 
+    redirect,
+)
+from django.contrib.auth import (
+    login, 
+    logout,
+)
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_POST
-from .models import CustomUser
 from .services import UserService
 from .exceptions import UserDomainException
 from .forms import (
@@ -11,7 +16,21 @@ from .forms import (
     CustomAuthenticationForm,
     CustomUserChangeForm
 )
-from functools import wraps
+from .decorators import (
+    medico_or_superadmin_required,
+)
+
+from gmp.usuarios.constants import (
+    URL_LOGIN,
+    URL_HOME,
+    URL_PERFIL_USUARIO,
+    URL_STAFF,
+    MSG_CONTA_CRIADA_SUCESSO,
+    MSG_LOGIN_REALIZADO_SUCESSO,
+    MSG_LOGOUT_REALIZADO_SUCESSO,
+    MSG_PERFIL_ATUALIZADO_SUCESSO,
+    MSG_USUARIO_CRIADO_SUCESSO,
+)
 
 
 def home(request):
@@ -34,8 +53,8 @@ def cadastro_view(request):
                     request_user=request.user
                 )
 
-                messages.success(request, "Conta criada com sucesso.")
-                return redirect('login')
+                messages.success(request, MSG_CONTA_CRIADA_SUCESSO)
+                return redirect(URL_LOGIN)
 
             except UserDomainException as e:
                 messages.error(request, str(e))
@@ -67,8 +86,8 @@ def login_view(request):
                 )
 
                 login(request, user)
-                messages.success(request, "Login realizado com sucesso.")
-                return redirect('home')
+                messages.success(request, MSG_LOGIN_REALIZADO_SUCESSO)
+                return redirect(URL_HOME)
 
             except UserDomainException as e:
                 messages.error(request, str(e))
@@ -81,15 +100,15 @@ def login_view(request):
     })
 
 
-@login_required
+@login_required(login_url=URL_LOGIN)
 @require_POST
 def logout_view(request):
     logout(request)
-    messages.info(request, "Você deslogou.")
-    return redirect('home')
+    messages.info(request, MSG_LOGOUT_REALIZADO_SUCESSO)
+    return redirect(URL_HOME)
 
 
-@login_required(login_url='login')
+@login_required(login_url=URL_LOGIN)
 def profile_view(request):
 
     if request.method == 'POST':
@@ -108,8 +127,8 @@ def profile_view(request):
                     request_user=request.user
                 )
 
-                messages.success(request, "Perfil atualizado.")
-                return redirect('perfil_usuario')
+                messages.success(request, MSG_PERFIL_ATUALIZADO_SUCESSO)
+                return redirect(URL_PERFIL_USUARIO)
 
             except UserDomainException as e:
                 messages.error(request, str(e))
@@ -123,34 +142,6 @@ def profile_view(request):
     return render(request, 'gmp/perfil_usuario.html', {
         'edit_form': form
     })
-
-
-def superadmin_required(view):
-    @wraps(view)
-    def wrapper(request, *args, **kwargs):
-        if not request.user.is_authenticated or request.user.role != CustomUser.ROLE_SUPERADM:
-            messages.error(request, "Acesso restrito.")
-            return redirect('home')
-        return view(request, *args, **kwargs)
-    return wrapper
-
-
-def medico_or_superadmin_required(view):
-    @wraps(view)
-    def wrapper(request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            messages.error(request, "Você precisa estar logado.")
-            return redirect('login')
-
-        if request.user.role not in [
-            CustomUser.ROLE_MEDICO,
-            CustomUser.ROLE_SUPERADM
-        ]:
-            messages.error(request, "Acesso restrito.")
-            return redirect('home')
-
-        return view(request, *args, **kwargs)
-    return wrapper
 
 
 @medico_or_superadmin_required
@@ -170,8 +161,8 @@ def staff_user_create(request):
                     request_user=request.user
                 )
 
-                messages.success(request, "Usuário criado com sucesso.")
-                return redirect('staff')
+                messages.success(request, MSG_USUARIO_CRIADO_SUCESSO)
+                return redirect(URL_STAFF)
 
             except UserDomainException as e:
                 messages.error(request, str(e))

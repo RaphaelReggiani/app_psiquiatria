@@ -1,26 +1,39 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm, UserChangeForm
-from django.utils.translation import gettext_lazy as _
+
+from django.contrib.auth.forms import (
+    UserCreationForm, 
+    UserChangeForm,
+)
+
 from gmp.usuarios.models import CustomUser
+
+from gmp.usuarios.constants import (
+    LABEL_PACIENTE,
+    LABEL_NOME,
+    LABEL_SENHA,
+    LABEL_CONFIRMAR_SENHA,
+    LABEL_EMAIL,
+    LABEL_IDADE,
+    LABEL_QUEIXA,
+    LABEL_ROLE,
+    LABEL_TELEFONE,
+    LABEL_ORIGEM,
+    LABEL_FOTO_PERFIL,
+    MSG_VALIDATION_ERROR_CAMPOS_OBRIGATORIOS,
+)
 
 
 class CustomUserCreationForm(UserCreationForm):
 
     password1 = forms.CharField(
-        label="Senha",
+        label=LABEL_SENHA,
         widget=forms.PasswordInput,
-        help_text="""
-        <ul>
-            <li>Mínimo de 8 caracteres</li>
-            <li>Não pode ser totalmente numérica</li>
-        </ul>
-        """
     )
 
     password2 = forms.CharField(
-        label="Confirmar senha",
+        label=LABEL_CONFIRMAR_SENHA,
         widget=forms.PasswordInput
-    )
+    ) 
 
     class Meta:
         model = CustomUser
@@ -30,21 +43,21 @@ class CustomUserCreationForm(UserCreationForm):
         self.request_user = kwargs.pop('request_user', None)
         super().__init__(*args, **kwargs)
 
-        self.fields['nome'].label = "Nome"
-        self.fields['email'].label = "E-mail"
-        self.fields['idade'].label = "Idade"
-        self.fields['queixa'].label = "Queixa"
-        self.fields['role'].label = "Perfil"
-        self.fields['telefone'].label = "Telefone"
-        self.fields['origem'].label = "Estado"
-        self.fields['foto_perfil'].label = "Foto"
+        self.fields['nome'].label = LABEL_NOME
+        self.fields['email'].label = LABEL_EMAIL
+        self.fields['idade'].label = LABEL_IDADE
+        self.fields['queixa'].label = LABEL_QUEIXA
+        self.fields['role'].label = LABEL_ROLE
+        self.fields['telefone'].label = LABEL_TELEFONE
+        self.fields['origem'].label = LABEL_ORIGEM
+        self.fields['foto_perfil'].label = LABEL_FOTO_PERFIL
 
         if not self.request_user:
             self.fields.pop('role')
             return
 
         if self.request_user.role == CustomUser.ROLE_MEDICO:
-            self.fields['role'].choices = [(CustomUser.ROLE_PACIENTE, 'Paciente')]
+            self.fields['role'].choices = [(CustomUser.ROLE_PACIENTE, LABEL_PACIENTE)]
 
         if self.request_user.role == CustomUser.ROLE_SUPERADM:
             self.fields['role'].choices = CustomUser.ROLE_CHOICES
@@ -52,8 +65,8 @@ class CustomUserCreationForm(UserCreationForm):
 
 class CustomAuthenticationForm(forms.Form):
 
-    email = forms.EmailField(label="E-mail")
-    password = forms.CharField(label="Senha", widget=forms.PasswordInput)
+    email = forms.EmailField(label=LABEL_EMAIL)
+    password = forms.CharField(label=LABEL_SENHA, widget=forms.PasswordInput)
 
     def clean(self):
         cleaned_data = super().clean()
@@ -62,7 +75,7 @@ class CustomAuthenticationForm(forms.Form):
         password = cleaned_data.get("password")
 
         if not email or not password:
-            raise forms.ValidationError("Preencha todos os campos.")
+            raise forms.ValidationError(MSG_VALIDATION_ERROR_CAMPOS_OBRIGATORIOS)
 
         return cleaned_data
 

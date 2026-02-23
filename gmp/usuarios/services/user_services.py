@@ -7,6 +7,15 @@ from ..exceptions import (
     EmailAlreadyExists,
 )
 
+from gmp.usuarios.constants import (
+    MSG_ERRO_USUARIO_JA_EXISTE,
+    MSG_INVALID_ROLE_ASSIGNMENT_MEDICO,
+    MSG_INVALID_ROLE_ASSIGNMENT_NOT_SUPERADM,
+    MSG_INVALID_ROLE_ASSIGNMENT_PERFIL,
+    MSG_AUTHENTICATION_FAILED_CREDENCIAIS,
+    MSG_AUTHENTICATION_FAILED_EMAIL_SENHA,
+    MSG_AUTHENTICATION_FAILED_CONTA_INATIVA,
+)
 
 class UserService:
 
@@ -20,19 +29,13 @@ class UserService:
 
         elif request_user.role == CustomUser.ROLE_MEDICO:
             if role != CustomUser.ROLE_PACIENTE:
-                raise InvalidRoleAssignment(
-                    "Médicos só podem criar pacientes."
-                )
+                raise InvalidRoleAssignment(MSG_INVALID_ROLE_ASSIGNMENT_MEDICO)
 
         elif request_user.role != CustomUser.ROLE_SUPERADM:
-            raise InvalidRoleAssignment(
-                "Você não tem permissão para criar este tipo de usuário."
-            )
+            raise InvalidRoleAssignment(MSG_INVALID_ROLE_ASSIGNMENT_NOT_SUPERADM)
 
         if CustomUser.objects.filter(email=data["email"]).exists():
-            raise EmailAlreadyExists(
-                "Já existe um usuário com este e-mail."
-            )
+            raise EmailAlreadyExists(MSG_ERRO_USUARIO_JA_EXISTE)
 
         user = CustomUser.objects.create_user(
             email=data["email"],
@@ -52,15 +55,15 @@ class UserService:
     def authenticate_user(request, email, password):
 
         if not email or not password:
-            raise AuthenticationFailed("Credenciais inválidas.")
+            raise AuthenticationFailed(MSG_AUTHENTICATION_FAILED_CREDENCIAIS)
 
         user = authenticate(request, username=email, password=password)
 
         if user is None:
-            raise AuthenticationFailed("E-mail ou senha inválidos.")
+            raise AuthenticationFailed(MSG_AUTHENTICATION_FAILED_EMAIL_SENHA)
 
         if not user.is_active:
-            raise AuthenticationFailed("Conta inativa.")
+            raise AuthenticationFailed(MSG_AUTHENTICATION_FAILED_CONTA_INATIVA)
 
         return user
 
@@ -71,9 +74,7 @@ class UserService:
 
         if request_user.role != CustomUser.ROLE_SUPERADM:
             if new_role != instance.role:
-                raise UnauthorizedRoleChange(
-                    "Você não pode alterar o perfil deste usuário."
-                )
+                raise UnauthorizedRoleChange(MSG_INVALID_ROLE_ASSIGNMENT_PERFIL)
 
         allowed_fields = [
             "nome",

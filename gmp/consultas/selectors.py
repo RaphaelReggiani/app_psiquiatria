@@ -46,8 +46,7 @@ def agenda_medico_com_filtros(
     status=None,
 ) -> QuerySet:
     consultas = (
-        AgendamentoConsulta.objects
-        .select_related('paciente', 'medico')
+        AgendamentoConsulta.objects.select_related('paciente', 'medico')
         .only(
             'id',
             'data_hora',
@@ -74,7 +73,7 @@ def agenda_medico_com_filtros(
     if status:
         consultas = consultas.filter(status=status)
 
-    return consultas.order_by('data_hora')
+    return consultas.order_by('-data_hora')
 
 
 def pacientes_com_consulta_realizada_do_medico(medico) -> QuerySet:

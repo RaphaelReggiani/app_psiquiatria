@@ -1,9 +1,16 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import (
+    render,
+    redirect, 
+    get_object_or_404,
+)
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.contrib import messages
 from django.utils import timezone
-from django.http import JsonResponse, HttpResponse
+from django.http import (
+    JsonResponse, 
+    HttpResponse,
+)
 from django.utils.timezone import localdate
 from django.core.paginator import Paginator
 from django.contrib.auth import get_user_model
@@ -26,7 +33,12 @@ from gmp.consultas.exceptions import ConsultaError
 from gmp.usuarios.models import CustomUser
 
 from .models import AgendamentoConsulta
-from .forms import AgendamentoConsultaForm, ConsultaForm
+
+from .forms import (
+    AgendamentoConsultaForm, 
+    ConsultaForm,
+)
+
 from .selectors import (
     consultas_do_paciente, 
     consultas_realizadas_por_medico,
@@ -37,6 +49,8 @@ from .selectors import (
     consulta_por_id,
 )
 from gmp.consultas.constants import (
+    URL_AGENDA_MEDICO,
+    URL_MINHAS_CONSULTAS,
     PAGINACAO_PADRAO,
     MSG_CONSULTA_MARCADA_SUCESSO,
     MSG_CONSULTA_CANCELADA_SUCESSO,
@@ -70,7 +84,7 @@ def marcar_consulta(request):
             try:
                 marcar_consulta_service(form, request.user)
                 messages.success(request, MSG_CONSULTA_MARCADA_SUCESSO)
-                return redirect('minhas_consultas')
+                return redirect(URL_MINHAS_CONSULTAS)
             except ConsultaError as e:
                 messages.error(request, str(e))
     else:
@@ -170,7 +184,7 @@ def cadastrar_consulta(request, agendamento_id):
             try:
                 registrar_consulta_service(agendamento, form, request.user)
                 messages.success(request, MSG_CONSULTA_REGISTRADA_SUCESSO)
-                return redirect('agenda_medico')
+                return redirect(URL_AGENDA_MEDICO)
             except ConsultaError as e:
                 messages.error(request, str(e))
     else:
@@ -198,8 +212,8 @@ def cancelar_consulta(request, consulta_id):
         messages.error(request, str(e))
 
     return redirect(
-        'agenda_medico' if request.user.role == CustomUser.ROLE_MEDICO
-        else 'minhas_consultas'
+        URL_AGENDA_MEDICO if request.user.role == CustomUser.ROLE_MEDICO
+        else URL_MINHAS_CONSULTAS
     )
 
 

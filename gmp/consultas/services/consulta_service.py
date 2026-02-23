@@ -11,17 +11,17 @@ from gmp.consultas.exceptions import (
     ConsultaPassadaError,
     ConsultaStatusInvalidoError,
 )
-from gmp.consultas.constants import FORMATO_DATA, FORMATO_HORA, LOG_STATUS_INICIAL
+from gmp.consultas.constants.constants import FORMATO_DATA, FORMATO_HORA, LOG_STATUS_INICIAL
 from gmp.consultas.utils.cache_keys import horarios_medico_key
 from gmp.consultas.services.log_service import registrar_log
 from gmp.consultas.services.cache_service import delete_cache
 
+from gmp.consultas.constants.messages_constants import (
+    MSG_ERRO_CANCELAR_CONSULTA_SERVICE,
+    MSG_ERRO_REGISTRAR_CONSULTA_SERVICE,
+)
 
 def marcar_consulta_service(form, usuario):
-    """
-    Responsável por criar um agendamento,
-    registrar log e enviar e-mail.
-    """
 
     with transaction.atomic():
 
@@ -58,13 +58,10 @@ def marcar_consulta_service(form, usuario):
 
 
 def cancelar_consulta_service(consulta, usuario):
-    """
-    Cancela uma consulta validando regras de domínio.
-    """
 
     if consulta.status != AgendamentoConsulta.STATUS_MARCADA:
         raise ConsultaStatusInvalidoError(
-            "Apenas consultas marcadas podem ser canceladas."
+            MSG_ERRO_CANCELAR_CONSULTA_SERVICE
         )
 
     if consulta.data_hora <= timezone.now():
@@ -98,13 +95,10 @@ def cancelar_consulta_service(consulta, usuario):
 
 
 def registrar_consulta_service(agendamento, form, usuario):
-    """
-    Registra a realização de uma consulta.
-    """
 
     if agendamento.status != AgendamentoConsulta.STATUS_MARCADA:
         raise ConsultaStatusInvalidoError(
-            "Somente consultas marcadas podem ser registradas."
+            MSG_ERRO_REGISTRAR_CONSULTA_SERVICE
         )
 
     if agendamento.medico != usuario:

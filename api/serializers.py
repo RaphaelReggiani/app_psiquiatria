@@ -1,7 +1,26 @@
 from rest_framework import serializers
 from gmp.usuarios.models import CustomUser
-from gmp.consultas.models import AgendamentoConsulta, Consulta
+from gmp.consultas.models import (
+    AgendamentoConsulta, 
+    Consulta,
+)
 from django.utils import timezone
+
+
+from api.constants import (
+    API_RECEITA_MAX_SIZE,
+    API_ERROR_AGENDAMENTO_FINALIZADO,
+    API_ERROR_STATUS_PERMISSION,
+    API_ERROR_OUTRO_MEDICO,
+    API_ERROR_AGENDAMENTO_PASSADO,
+    API_ERROR_CONSULTA_EXISTENTE,
+    API_ERROR_APENAS_MEDICO,
+    API_ERROR_CONSULTA_OUTRO_MEDICO,
+    API_ERROR_STATUS_NAO_REALIZADO,
+    API_ERROR_ARQUIVO_MAX_SIZE,
+    API_ERROR_ARQUIVO_NAO_PDF,
+    API_ERROR_ARQUIVO_TIPO_INVALIDO,
+)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -82,9 +101,7 @@ class AgendamentoConsultaSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if instance.status in [AgendamentoConsulta.STATUS_REALIZADA, AgendamentoConsulta.STATUS_NAO_REALIZADA]:
-            raise serializers.ValidationError(
-                "Agendamento finalizado não pode ser alterado."
-            )
+            raise serializers.ValidationError(API_ERROR_AGENDAMENTO_FINALIZADO)
         return super().update(instance, validated_data)
     
     def validate(self, data):
@@ -93,15 +110,11 @@ class AgendamentoConsultaSerializer(serializers.ModelSerializer):
 
         if "status" in data:
             if user.role not in [CustomUser.ROLE_MEDICO, CustomUser.ROLE_SUPERADM]:
-                raise serializers.ValidationError(
-                    "Você não pode alterar o status."
-                )
+                raise serializers.ValidationError(API_ERROR_STATUS_PERMISSION)
 
             if user.role == CustomUser.ROLE_MEDICO and self.instance:
                 if self.instance.medico != user:
-                    raise serializers.ValidationError(
-                        "Você não pode alterar agendamento de outro médico."
-                    )
+                    raise serializers.ValidationError(API_ERROR_OUTRO_MEDICO)
 
         return data
 
@@ -117,7 +130,6 @@ class ConsultaSerializer(serializers.ModelSerializer):
             'descricao',
             'receita',
             'arquivo',
-            'id',
             'protocolo',
             'criado_em',
             'crm_medico',
@@ -130,14 +142,10 @@ class ConsultaSerializer(serializers.ModelSerializer):
         agendamento = data.get("agendamento")
 
         if agendamento and agendamento.data_hora < timezone.now():
-            raise serializers.ValidationError(
-                "Não é permitido criar consulta para agendamento no passado."
-            )
+            raise serializers.ValidationError(API_ERROR_AGENDAMENTO_PASSADO)
 
         if agendamento and hasattr(agendamento, "consulta"):
-            raise serializers.ValidationError(
-                "Este agendamento já possui consulta registrada."
-            )
+            raise serializers.ValidationError(API_ERROR_CONSULTA_EXISTENTE)
 
         return data
 
@@ -150,38 +158,26 @@ class ConsultaSerializer(serializers.ModelSerializer):
 
         user = request.user
         if user.role != CustomUser.ROLE_MEDICO:
-            raise serializers.ValidationError(
-                "Apenas médicos podem registrar consultas."
-            )
+            raise serializers.ValidationError(API_ERROR_APENAS_MEDICO)
         if value.medico != user:
-            raise serializers.ValidationError(
-                "Você não pode registrar consulta de outro médico."
-            )
+            raise serializers.ValidationError(API_ERROR_CONSULTA_OUTRO_MEDICO)
 
         if value.status != AgendamentoConsulta.STATUS_REALIZADA:
-            raise serializers.ValidationError(
-                "Consulta só pode ser registrada para agendamento realizado."
-            )
+            raise serializers.ValidationError(API_ERROR_STATUS_NAO_REALIZADO)
 
         return value
     
     def validate_receita(self, value):
-        max_size = 5 * 1024 * 1024
+        max_size = API_RECEITA_MAX_SIZE
 
         if value.size > max_size:
-            raise serializers.ValidationError(
-                "Arquivo excede o tamanho máximo de 5MB."
-            )
+            raise serializers.ValidationError(API_ERROR_ARQUIVO_MAX_SIZE)
 
         if not value.name.lower().endswith(".pdf"):
-            raise serializers.ValidationError(
-                "A receita deve ser PDF."
-            )
+            raise serializers.ValidationError(API_ERROR_ARQUIVO_NAO_PDF)
 
         if hasattr(value, "content_type") and value.content_type != "application/pdf":
-            raise serializers.ValidationError(
-                "Tipo inválido."
-            )
+            raise serializers.ValidationError(API_ERROR_ARQUIVO_TIPO_INVALIDO)
 
         return value
 

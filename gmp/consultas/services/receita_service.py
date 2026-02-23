@@ -25,9 +25,6 @@ from gmp.consultas.constants import (
 
 
 def gerar_receita_pdf(agendamento, medico_nome, crm, descricao):
-    """
-    Gera um PDF de receita médica para um agendamento válido.
-    """
 
     if not crm or not descricao:
         raise DadosReceitaInvalidosError()
