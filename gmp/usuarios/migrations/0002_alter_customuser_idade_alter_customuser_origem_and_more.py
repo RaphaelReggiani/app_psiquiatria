@@ -7,28 +7,57 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('usuarios', '0001_initial'),
+        ("usuarios", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='customuser',
-            name='idade',
-            field=models.PositiveIntegerField(blank=True, null=True, validators=[django.core.validators.MinValueValidator(1), django.core.validators.MaxValueValidator(85)]),
+            model_name="customuser",
+            name="idade",
+            field=models.PositiveIntegerField(
+                blank=True,
+                null=True,
+                validators=[
+                    django.core.validators.MinValueValidator(1),
+                    django.core.validators.MaxValueValidator(85),
+                ],
+            ),
         ),
         migrations.AlterField(
-            model_name='customuser',
-            name='origem',
+            model_name="customuser",
+            name="origem",
             field=models.CharField(blank=True, max_length=50, null=True),
         ),
         migrations.AlterField(
-            model_name='customuser',
-            name='queixa',
-            field=models.CharField(choices=[('depressao', 'Depressão'), ('ansiedade', 'Ansiedade'), ('tag', 'TAG'), ('toc', 'TOC'), ('bipolaridade', 'Bipolaridade'), ('esquizofrenia', 'Esquizofrenia'), ('outros', 'Outros')], db_index=True, default='depressao', max_length=30),
+            model_name="customuser",
+            name="queixa",
+            field=models.CharField(
+                choices=[
+                    ("depressao", "Depressão"),
+                    ("ansiedade", "Ansiedade"),
+                    ("tag", "TAG"),
+                    ("toc", "TOC"),
+                    ("bipolaridade", "Bipolaridade"),
+                    ("esquizofrenia", "Esquizofrenia"),
+                    ("outros", "Outros"),
+                ],
+                db_index=True,
+                default="depressao",
+                max_length=30,
+            ),
         ),
         migrations.AlterField(
-            model_name='customuser',
-            name='role',
-            field=models.CharField(choices=[('paciente', 'Paciente'), ('medico', 'Médico'), ('superadm', 'Super Administrador')], db_index=True, default='paciente', max_length=20),
+            model_name="customuser",
+            name="role",
+            field=models.CharField(
+                choices=[
+                    ("paciente", "Paciente"),
+                    ("medico", "Médico"),
+                    ("superadm", "Super Administrador"),
+                ],
+                db_index=True,
+                default="paciente",
+                max_length=20,
+            ),
         ),
     ]

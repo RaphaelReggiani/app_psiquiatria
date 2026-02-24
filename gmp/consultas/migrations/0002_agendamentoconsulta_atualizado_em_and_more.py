@@ -8,35 +8,63 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('consultas', '0001_initial'),
+        ("consultas", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='agendamentoconsulta',
-            name='atualizado_em',
+            model_name="agendamentoconsulta",
+            name="atualizado_em",
             field=models.DateTimeField(auto_now=True),
         ),
         migrations.AddField(
-            model_name='agendamentoconsulta',
-            name='cancelado_em',
+            model_name="agendamentoconsulta",
+            name="cancelado_em",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='agendamentoconsulta',
-            name='cancelado_por',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='cancelamentos_realizados', to=settings.AUTH_USER_MODEL),
+            model_name="agendamentoconsulta",
+            name="cancelado_por",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="cancelamentos_realizados",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.CreateModel(
-            name='ConsultaLog',
+            name="ConsultaLog",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('status_anterior', models.CharField(max_length=15)),
-                ('status_novo', models.CharField(max_length=15)),
-                ('criado_em', models.DateTimeField(auto_now_add=True)),
-                ('consulta', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='logs', to='consultas.agendamentoconsulta')),
-                ('usuario', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("status_anterior", models.CharField(max_length=15)),
+                ("status_novo", models.CharField(max_length=15)),
+                ("criado_em", models.DateTimeField(auto_now_add=True)),
+                (
+                    "consulta",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="logs",
+                        to="consultas.agendamentoconsulta",
+                    ),
+                ),
+                (
+                    "usuario",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
     ]

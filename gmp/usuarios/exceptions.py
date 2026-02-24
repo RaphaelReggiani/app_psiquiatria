@@ -1,5 +1,6 @@
 class UserDomainException(Exception):
     """Base exception for user domain."""
+
     pass
 
 

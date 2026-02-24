@@ -1,21 +1,23 @@
 from django.contrib.auth import authenticate
-from ..models import CustomUser
-from ..exceptions import (
-    InvalidRoleAssignment,
-    UnauthorizedRoleChange,
-    AuthenticationFailed,
-    EmailAlreadyExists,
-)
 
 from gmp.usuarios.constants import (
+    MSG_AUTHENTICATION_FAILED_CONTA_INATIVA,
+    MSG_AUTHENTICATION_FAILED_CREDENCIAIS,
+    MSG_AUTHENTICATION_FAILED_EMAIL_SENHA,
     MSG_ERRO_USUARIO_JA_EXISTE,
     MSG_INVALID_ROLE_ASSIGNMENT_MEDICO,
     MSG_INVALID_ROLE_ASSIGNMENT_NOT_SUPERADM,
     MSG_INVALID_ROLE_ASSIGNMENT_PERFIL,
-    MSG_AUTHENTICATION_FAILED_CREDENCIAIS,
-    MSG_AUTHENTICATION_FAILED_EMAIL_SENHA,
-    MSG_AUTHENTICATION_FAILED_CONTA_INATIVA,
 )
+
+from ..exceptions import (
+    AuthenticationFailed,
+    EmailAlreadyExists,
+    InvalidRoleAssignment,
+    UnauthorizedRoleChange,
+)
+from ..models import CustomUser
+
 
 class UserService:
 

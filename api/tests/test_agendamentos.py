@@ -1,12 +1,11 @@
-import pytest
-from django.urls import reverse
-from gmp.consultas.models import AgendamentoConsulta
-from django.utils import timezone
 import datetime
 
-from gmp.consultas.constants import (
-    STATUS_LABEL_MARCADA,
-)
+import pytest
+from django.urls import reverse
+from django.utils import timezone
+
+from gmp.consultas.constants import STATUS_LABEL_MARCADA
+from gmp.consultas.models import AgendamentoConsulta
 
 
 @pytest.mark.django_db
@@ -18,14 +17,15 @@ class TestAgendamento:
 
         url = reverse("agendamentos-list")
 
-        data_hora = timezone.make_aware(
-            datetime.datetime(2030, 1, 1, 10, 0, 0)
-        )
+        data_hora = timezone.make_aware(datetime.datetime(2030, 1, 1, 10, 0, 0))
 
-        response = api_client.post(url, {
-            "medico": medico.id,
-            "data_hora": data_hora.isoformat(),
-        })
+        response = api_client.post(
+            url,
+            {
+                "medico": medico.id,
+                "data_hora": data_hora.isoformat(),
+            },
+        )
 
         assert response.status_code == 201
         assert AgendamentoConsulta.objects.count() == 1
@@ -41,14 +41,15 @@ class TestAgendamento:
 
         url = reverse("agendamentos-list")
 
-        data_hora = timezone.make_aware(
-            datetime.datetime(2030, 1, 1, 10, 0, 0)
-        )
+        data_hora = timezone.make_aware(datetime.datetime(2030, 1, 1, 10, 0, 0))
 
-        response = api_client.post(url, {
-            "medico": medico.id,
-            "data_hora": data_hora.isoformat(),
-        })
+        response = api_client.post(
+            url,
+            {
+                "medico": medico.id,
+                "data_hora": data_hora.isoformat(),
+            },
+        )
 
         assert response.status_code == 403
         assert AgendamentoConsulta.objects.count() == 0
@@ -57,9 +58,7 @@ class TestAgendamento:
         self, api_client, paciente, paciente2, medico
     ):
 
-        data_hora = timezone.make_aware(
-            datetime.datetime(2030, 1, 1, 10, 0, 0)
-        )
+        data_hora = timezone.make_aware(datetime.datetime(2030, 1, 1, 10, 0, 0))
 
         AgendamentoConsulta.objects.create(
             paciente=paciente2,
@@ -76,6 +75,3 @@ class TestAgendamento:
 
         assert response.status_code == 200
         assert len(response.data) == 0
-
-    
-

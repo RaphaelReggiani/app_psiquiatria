@@ -7,37 +7,49 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('consultas', '0006_alter_agendamentoconsulta_unique_together_and_more'),
+        ("consultas", "0006_alter_agendamentoconsulta_unique_together_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name='agendamentoconsulta',
-            index=models.Index(fields=['medico'], name='consultas_a_medico__250052_idx'),
+            model_name="agendamentoconsulta",
+            index=models.Index(
+                fields=["medico"], name="consultas_a_medico__250052_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='agendamentoconsulta',
-            index=models.Index(fields=['paciente'], name='consultas_a_pacient_554fe9_idx'),
+            model_name="agendamentoconsulta",
+            index=models.Index(
+                fields=["paciente"], name="consultas_a_pacient_554fe9_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='agendamentoconsulta',
-            index=models.Index(fields=['status'], name='consultas_a_status_e62dae_idx'),
+            model_name="agendamentoconsulta",
+            index=models.Index(fields=["status"], name="consultas_a_status_e62dae_idx"),
         ),
         migrations.AddIndex(
-            model_name='agendamentoconsulta',
-            index=models.Index(fields=['data_hora'], name='consultas_a_data_ho_747706_idx'),
+            model_name="agendamentoconsulta",
+            index=models.Index(
+                fields=["data_hora"], name="consultas_a_data_ho_747706_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='consultalog',
-            index=models.Index(fields=['consulta'], name='consultas_c_consult_fe6e17_idx'),
+            model_name="consultalog",
+            index=models.Index(
+                fields=["consulta"], name="consultas_c_consult_fe6e17_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='consultalog',
-            index=models.Index(fields=['criado_em'], name='consultas_c_criado__0700f4_idx'),
+            model_name="consultalog",
+            index=models.Index(
+                fields=["criado_em"], name="consultas_c_criado__0700f4_idx"
+            ),
         ),
         migrations.AddConstraint(
-            model_name='consulta',
-            constraint=models.UniqueConstraint(fields=('agendamento',), name='unique_consulta_por_agendamento'),
+            model_name="consulta",
+            constraint=models.UniqueConstraint(
+                fields=("agendamento",), name="unique_consulta_por_agendamento"
+            ),
         ),
     ]

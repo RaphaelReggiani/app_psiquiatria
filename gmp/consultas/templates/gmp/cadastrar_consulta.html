@@ -91,6 +91,8 @@
 
                 {{ field|add_class:"hidden" }}
 
+                  <p id="file-name-{{ field.id_for_label }}" class="mt-2 text-sm text-gray-500"></p>
+
               {% else %}
 
                 {{ field|add_class:"block w-full rounded-md bg-white px-3 py-2 text-gray-900 border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" }}
@@ -127,8 +129,16 @@
 <script>
 document.addEventListener("change", function(e){
   if(e.target.type === "file"){
-    e.target.previousElementSibling.textContent =
-      e.target.files.length ? e.target.files[0].name : "Selecionar Arquivo";
+
+    const fileNameContainer = document.getElementById(
+      "file-name-" + e.target.id
+    );
+
+    if(fileNameContainer){
+      fileNameContainer.textContent = e.target.files.length
+        ? e.target.files[0].name
+        : "";
+    }
   }
 });
 </script>

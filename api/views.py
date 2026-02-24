@@ -1,55 +1,41 @@
 from rest_framework import viewsets
-from rest_framework.permissions import (
-    AllowAny, 
-    IsAuthenticated,
-)
-from rest_framework.exceptions import (
-    PermissionDenied, 
-    ValidationError,
-)
-
-from gmp.usuarios.models import CustomUser
-from gmp.usuarios.services.user_services import UserService
-from gmp.usuarios.exceptions import UserDomainException
-from gmp.consultas.models import (
-    Consulta, 
-    AgendamentoConsulta,
-)
-
-from .serializers import (
-    UserSerializer,
-    ConsultaSerializer,
-    AgendamentoConsultaSerializer
-)
-
-from .permissions import (
-    IsUserOwnerOrSuperAdmin,
-    IsAgendamentoOwnerOrSuperAdmin,
-    IsConsultaOwnerOrSuperAdmin
-)
-
-from gmp.consultas.constants import (
-    STATUS_REALIZADA,
-)
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from api.constants import (
     API_ERROR_CONSULTA_UPDATE_NOT_ALLOWED,
     API_ERROR_MEDICO_NAO_PODE_MARCAR,
     API_ERROR_SEM_PERMISSAO,
 )
+from gmp.consultas.constants import STATUS_REALIZADA
+from gmp.consultas.models import AgendamentoConsulta, Consulta
+from gmp.usuarios.exceptions import UserDomainException
+from gmp.usuarios.models import CustomUser
+from gmp.usuarios.services.user_services import UserService
+
+from .permissions import (
+    IsAgendamentoOwnerOrSuperAdmin,
+    IsConsultaOwnerOrSuperAdmin,
+    IsUserOwnerOrSuperAdmin,
+)
+from .serializers import (
+    AgendamentoConsultaSerializer,
+    ConsultaSerializer,
+    UserSerializer,
+)
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    
+
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
 
     def get_permissions(self):
 
-        if self.action == 'create':
+        if self.action == "create":
             return [AllowAny()]
 
-        if self.action in ['retrieve', 'update', 'partial_update']:
+        if self.action in ["retrieve", "update", "partial_update"]:
             return [IsUserOwnerOrSuperAdmin()]
 
         return [IsAuthenticated()]
@@ -59,7 +45,7 @@ class UserViewSet(viewsets.ModelViewSet):
             UserService.update_user(
                 instance=self.get_object(),
                 data=serializer.validated_data,
-                request_user=self.request.user
+                request_user=self.request.user,
             )
         except UserDomainException as e:
             raise ValidationError(str(e))
@@ -91,9 +77,7 @@ class ConsultaViewSet(viewsets.ModelViewSet):
             return Consulta.objects.all()
 
         if user.role == CustomUser.ROLE_MEDICO:
-            return Consulta.objects.filter(
-                agendamento__medico=user
-            )
+            return Consulta.objects.filter(agendamento__medico=user)
 
         return Consulta.objects.filter(
             agendamento__paciente=user,
@@ -143,4 +127,3 @@ class AgendamentoConsultaViewSet(viewsets.ModelViewSet):
             return
 
         raise PermissionDenied(API_ERROR_SEM_PERMISSAO)
-

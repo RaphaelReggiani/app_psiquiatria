@@ -1,19 +1,20 @@
-from datetime import time, datetime, timedelta
+from datetime import datetime, time, timedelta
+
 from django.utils import timezone
 
-from gmp.consultas.models import AgendamentoConsulta
 from gmp.consultas.constants import (
-    CACHE_TIMEOUT_HORARIOS,
     ANTECEDENCIA_MINIMA_HORAS,
-    HORA_INICIO_ATENDIMENTO,
-    HORA_FIM_ATENDIMENTO,
-    INTERVALO_MINUTOS,
+    CACHE_TIMEOUT_HORARIOS,
     DIA_UTIL_FINAL,
     FORMATO_DATA,
-    FORMATO_HORA
+    FORMATO_HORA,
+    HORA_FIM_ATENDIMENTO,
+    HORA_INICIO_ATENDIMENTO,
+    INTERVALO_MINUTOS,
 )
-from gmp.consultas.utils.cache_keys import horarios_medico_key
+from gmp.consultas.models import AgendamentoConsulta
 from gmp.consultas.services.cache_service import get_cache, set_cache
+from gmp.consultas.utils.cache_keys import horarios_medico_key
 
 
 def horarios_disponiveis_service(medico_id, data_str):
@@ -43,18 +44,19 @@ def horarios_disponiveis_service(medico_id, data_str):
             if dt >= minimo:
                 horarios.append(dt)
 
-    ocupados = AgendamentoConsulta.objects.only('data_hora').filter(
-        medico_id=medico_id,
-        data_hora__date=data,
-        status=AgendamentoConsulta.STATUS_MARCADA
-    ).values_list('data_hora', flat=True)
+    ocupados = (
+        AgendamentoConsulta.objects.only("data_hora")
+        .filter(
+            medico_id=medico_id,
+            data_hora__date=data,
+            status=AgendamentoConsulta.STATUS_MARCADA,
+        )
+        .values_list("data_hora", flat=True)
+    )
 
     ocupados = set(ocupados)
 
-    disponiveis = [
-        h.strftime(FORMATO_HORA)
-        for h in horarios if h not in ocupados
-    ]
+    disponiveis = [h.strftime(FORMATO_HORA) for h in horarios if h not in ocupados]
 
     set_cache(cache_key, disponiveis, CACHE_TIMEOUT_HORARIOS)
 

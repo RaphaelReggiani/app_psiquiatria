@@ -1,83 +1,72 @@
-from django.shortcuts import (
-    render,
-    redirect, 
-    get_object_or_404,
-)
+from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.contrib import messages
-from django.utils import timezone
-from django.http import (
-    JsonResponse, 
-    HttpResponse,
-)
-from django.utils.timezone import localdate
 from django.core.paginator import Paginator
-from django.contrib.auth import get_user_model
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.utils.timezone import localdate
 
-from gmp.consultas.services.consulta_service import (
-    cancelar_consulta_service, 
-    registrar_consulta_service, 
-    marcar_consulta_service, 
-)
-from gmp.consultas.services.horarios_service import ( 
-    horarios_disponiveis_service,
-)
-from gmp.consultas.services.receita_service import ( 
-    gerar_receita_preview_service,
-    validar_visualizacao_receita_service,
-)
-
-from gmp.consultas.exceptions import ConsultaError
-
-from gmp.usuarios.models import CustomUser
-
-from .models import AgendamentoConsulta
-
-from .forms import (
-    AgendamentoConsultaForm, 
-    ConsultaForm,
-)
-
-from .selectors import (
-    consultas_do_paciente, 
-    consultas_realizadas_por_medico,
-    pacientes_com_consulta_realizada_do_medico,
-    historico_paciente_realizadas,
-    agenda_medico_com_filtros,
-    consulta_marcada_por_id,
-    consulta_por_id,
-)
 from gmp.consultas.constants import (
-    URL_AGENDA_MEDICO,
-    URL_MINHAS_CONSULTAS,
-    PAGINACAO_PADRAO,
-    MSG_CONSULTA_MARCADA_SUCESSO,
     MSG_CONSULTA_CANCELADA_SUCESSO,
+    MSG_CONSULTA_MARCADA_SUCESSO,
     MSG_CONSULTA_REGISTRADA_SUCESSO,
     MSG_ERRO_SEM_PERMISSAO,
     MSG_INFO_SEM_CONSULTAS_FILTRO,
     MSG_INFO_SEM_PACIENTES_QUEIXA,
+    PAGINACAO_PADRAO,
+    URL_AGENDA_MEDICO,
+    URL_MINHAS_CONSULTAS,
 )
+from gmp.consultas.exceptions import ConsultaError
+from gmp.consultas.services.consulta_service import (
+    cancelar_consulta_service,
+    marcar_consulta_service,
+    registrar_consulta_service,
+)
+from gmp.consultas.services.horarios_service import horarios_disponiveis_service
+from gmp.consultas.services.receita_service import (
+    gerar_receita_preview_service,
+    validar_visualizacao_receita_service,
+)
+from gmp.usuarios.models import CustomUser
 
 from .decorators import role_required
-
+from .forms import AgendamentoConsultaForm, ConsultaForm
+from .models import AgendamentoConsulta
+from .selectors import (
+    agenda_medico_com_filtros,
+    consulta_marcada_por_id,
+    consulta_por_id,
+    consultas_do_paciente,
+    consultas_realizadas_por_medico,
+    historico_paciente_realizadas,
+    pacientes_com_consulta_realizada_do_medico,
+)
 
 User = get_user_model()
 
+
 def paciente_ou_superadmin(user):
-    return user.is_authenticated and user.role in [CustomUser.ROLE_PACIENTE, CustomUser.ROLE_SUPERADM]
+    return user.is_authenticated and user.role in [
+        CustomUser.ROLE_PACIENTE,
+        CustomUser.ROLE_SUPERADM,
+    ]
 
 
 def medico_ou_superadmin(user):
-    return user.is_authenticated and user.role in [CustomUser.ROLE_MEDICO, CustomUser.ROLE_SUPERADM]
+    return user.is_authenticated and user.role in [
+        CustomUser.ROLE_MEDICO,
+        CustomUser.ROLE_SUPERADM,
+    ]
 
 
 @login_required
-@role_required([CustomUser.ROLE_PACIENTE, CustomUser.ROLE_SUPERADM])
+@role_required(CustomUser.ROLE_PACIENTE, CustomUser.ROLE_SUPERADM)
 def marcar_consulta(request):
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = AgendamentoConsultaForm(request.POST, user=request.user)
 
         if form.is_valid():
@@ -90,17 +79,23 @@ def marcar_consulta(request):
     else:
         form = AgendamentoConsultaForm(user=request.user)
 
-    return render(request, 'gmp/marcar_consulta.html', {
-        'form': form,
-        'paciente_logado': request.user if request.user.role == CustomUser.ROLE_PACIENTE else None
-    })
+    return render(
+        request,
+        "gmp/marcar_consulta.html",
+        {
+            "form": form,
+            "paciente_logado": (
+                request.user if request.user.role == CustomUser.ROLE_PACIENTE else None
+            ),
+        },
+    )
 
 
 @login_required
 def horarios_disponiveis(request):
 
-    medico_id = request.GET.get('medico')
-    data = request.GET.get('data')
+    medico_id = request.GET.get("medico")
+    data = request.GET.get("data")
 
     horarios = horarios_disponiveis_service(medico_id, data)
 
@@ -108,15 +103,15 @@ def horarios_disponiveis(request):
 
 
 @login_required
-@role_required([CustomUser.ROLE_MEDICO, CustomUser.ROLE_SUPERADM])
+@role_required(CustomUser.ROLE_MEDICO, CustomUser.ROLE_SUPERADM)
 def agenda_medico(request):
 
     hoje = localdate()
 
-    data = request.GET.get('data')
-    paciente_id = request.GET.get('paciente_id')
-    queixa = request.GET.get('queixa')
-    status = request.GET.get('status')
+    data = request.GET.get("data")
+    paciente_id = request.GET.get("paciente_id")
+    queixa = request.GET.get("queixa")
+    status = request.GET.get("status")
 
     consultas = agenda_medico_com_filtros(
         medico=request.user,
@@ -131,53 +126,57 @@ def agenda_medico(request):
 
     pacientes = pacientes_com_consulta_realizada_do_medico(request.user)
 
-    return render(request, 'gmp/agenda_medico.html', {
-        'consultas': consultas,
-        'hoje': hoje,
-        'now': timezone.now(),
-        'pacientes': pacientes,
-        'queixas_choices': CustomUser.QUEIXA_CHOICES,
-        'status_choices': AgendamentoConsulta.STATUS_CHOICES,
-    })
+    return render(
+        request,
+        "gmp/agenda_medico.html",
+        {
+            "consultas": consultas,
+            "hoje": hoje,
+            "now": timezone.now(),
+            "pacientes": pacientes,
+            "queixas_choices": CustomUser.QUEIXA_CHOICES,
+            "status_choices": AgendamentoConsulta.STATUS_CHOICES,
+        },
+    )
+
 
 @login_required
-@role_required([CustomUser.ROLE_PACIENTE])
+@role_required(CustomUser.ROLE_PACIENTE)
 def minhas_consultas(request):
 
     consultas = consultas_do_paciente(request.user)
 
     paginator = Paginator(consultas, PAGINACAO_PADRAO)
-    page_number = request.GET.get('page')
+    page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    return render(request, 'gmp/minhas_consultas.html', {
-        'page_obj': page_obj,
-        'now': timezone.now()
-    })
+    return render(
+        request,
+        "gmp/minhas_consultas.html",
+        {"page_obj": page_obj, "now": timezone.now()},
+    )
 
 
 @login_required
-@role_required([CustomUser.ROLE_MEDICO, CustomUser.ROLE_SUPERADM])
+@role_required(CustomUser.ROLE_MEDICO, CustomUser.ROLE_SUPERADM)
 def historico_paciente(request, paciente_id):
 
     consultas = historico_paciente_realizadas(paciente_id)
 
-    return render(request, 'gmp/historico_paciente.html', {
-        'consultas': consultas
-    })
+    return render(request, "gmp/historico_paciente.html", {"consultas": consultas})
 
 
 @login_required
-@role_required([CustomUser.ROLE_MEDICO, CustomUser.ROLE_SUPERADM])
+@role_required(CustomUser.ROLE_MEDICO, CustomUser.ROLE_SUPERADM)
 def cadastrar_consulta(request, agendamento_id):
 
     agendamento = get_object_or_404(
-        AgendamentoConsulta.objects.select_related('paciente', 'medico'),
+        AgendamentoConsulta.objects.select_related("paciente", "medico"),
         id=agendamento_id,
-        medico=request.user
+        medico=request.user,
     )
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = ConsultaForm(request.POST, request.FILES)
 
         if form.is_valid():
@@ -190,20 +189,18 @@ def cadastrar_consulta(request, agendamento_id):
     else:
         form = ConsultaForm()
 
-    return render(request, 'gmp/cadastrar_consulta.html', {
-        'form': form,
-        'agendamento': agendamento,
-        'paciente': agendamento.paciente
-    })
+    return render(
+        request,
+        "gmp/cadastrar_consulta.html",
+        {"form": form, "agendamento": agendamento, "paciente": agendamento.paciente},
+    )
 
 
 @login_required
-@role_required([CustomUser.ROLE_MEDICO, CustomUser.ROLE_PACIENTE])
+@role_required(CustomUser.ROLE_MEDICO, CustomUser.ROLE_PACIENTE)
 def cancelar_consulta(request, consulta_id):
 
-    consulta = get_object_or_404(
-        consulta_marcada_por_id(consulta_id)
-    )
+    consulta = get_object_or_404(consulta_marcada_por_id(consulta_id))
 
     try:
         cancelar_consulta_service(consulta, request.user)
@@ -212,7 +209,8 @@ def cancelar_consulta(request, consulta_id):
         messages.error(request, str(e))
 
     return redirect(
-        URL_AGENDA_MEDICO if request.user.role == CustomUser.ROLE_MEDICO
+        URL_AGENDA_MEDICO
+        if request.user.role == CustomUser.ROLE_MEDICO
         else URL_MINHAS_CONSULTAS
     )
 
@@ -225,9 +223,9 @@ def historico_medico_consultas(request):
 
     consultas = consultas_realizadas_por_medico(request.user)
 
-    data = request.GET.get('data')
-    paciente_id = request.GET.get('paciente_id')
-    queixa = request.GET.get('queixa')
+    data = request.GET.get("data")
+    paciente_id = request.GET.get("paciente_id")
+    queixa = request.GET.get("queixa")
 
     if data:
         consultas = consultas.filter(data_hora__date=data)
@@ -236,9 +234,7 @@ def historico_medico_consultas(request):
         consultas = consultas.filter(paciente_id=paciente_id)
 
     if queixa:
-        consultas = consultas.filter(
-            paciente__queixa=queixa
-        )
+        consultas = consultas.filter(paciente__queixa=queixa)
 
     pacientes = pacientes_com_consulta_realizada_do_medico(request.user)
 
@@ -246,14 +242,18 @@ def historico_medico_consultas(request):
         messages.info(request, MSG_INFO_SEM_CONSULTAS_FILTRO)
 
     paginator = Paginator(consultas, PAGINACAO_PADRAO)
-    page_number = request.GET.get('page')
+    page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    return render(request, 'gmp/historico_medico_consultas.html', {
-        'page_obj': page_obj,
-        'pacientes': pacientes,
-        'queixas_choices': CustomUser.QUEIXA_CHOICES,
-    })
+    return render(
+        request,
+        "gmp/historico_medico_consultas.html",
+        {
+            "page_obj": page_obj,
+            "pacientes": pacientes,
+            "queixas_choices": CustomUser.QUEIXA_CHOICES,
+        },
+    )
 
 
 @login_required
@@ -262,7 +262,7 @@ def medico_pacientes(request):
     if not medico_ou_superadmin(request.user):
         raise PermissionDenied(MSG_ERRO_SEM_PERMISSAO)
 
-    queixa = request.GET.get('queixa')
+    queixa = request.GET.get("queixa")
 
     pacientes = pacientes_com_consulta_realizada_do_medico(request.user)
 
@@ -272,51 +272,44 @@ def medico_pacientes(request):
     if queixa and not pacientes.exists():
         messages.info(request, MSG_INFO_SEM_PACIENTES_QUEIXA)
 
-    return render(request, 'gmp/medico_pacientes.html', {
-        'pacientes': pacientes,
-        'queixas_choices': CustomUser.QUEIXA_CHOICES,
-    })
+    return render(
+        request,
+        "gmp/medico_pacientes.html",
+        {
+            "pacientes": pacientes,
+            "queixas_choices": CustomUser.QUEIXA_CHOICES,
+        },
+    )
 
 
 @login_required
 def visualizar_receita(request, consulta_id):
 
-    agendamento = get_object_or_404(
-        consulta_por_id(consulta_id)
-    )
+    agendamento = get_object_or_404(consulta_por_id(consulta_id))
 
     try:
-        consulta = validar_visualizacao_receita_service(
-            agendamento,
-            request.user
-        )
+        consulta = validar_visualizacao_receita_service(agendamento, request.user)
     except ConsultaError as e:
         raise PermissionDenied(str(e))
 
-    return render(request, 'gmp/receita.html', {
-        'consulta': consulta
-    })
+    return render(request, "gmp/receita.html", {"consulta": consulta})
+
 
 @login_required
 def gerar_receita_preview(request, agendamento_id):
 
-    agendamento = get_object_or_404(
-        consulta_marcada_por_id(agendamento_id)
-    )
+    agendamento = get_object_or_404(consulta_marcada_por_id(agendamento_id))
 
     crm = request.GET.get("crm")
     descricao = request.GET.get("descricao")
 
     try:
         pdf_buffer = gerar_receita_preview_service(
-            agendamento,
-            request.user,
-            crm,
-            descricao
+            agendamento, request.user, crm, descricao
         )
 
-        response = HttpResponse(pdf_buffer, content_type='application/pdf')
-        response['Content-Disposition'] = 'inline; filename="receita_preview.pdf"'
+        response = HttpResponse(pdf_buffer, content_type="application/pdf")
+        response["Content-Disposition"] = 'inline; filename="receita_preview.pdf"'
         return response
 
     except ConsultaError as e:

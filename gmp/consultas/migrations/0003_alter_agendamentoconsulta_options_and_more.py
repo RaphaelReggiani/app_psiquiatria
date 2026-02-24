@@ -6,17 +6,26 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('consultas', '0002_agendamentoconsulta_atualizado_em_and_more'),
+        ("consultas", "0002_agendamentoconsulta_atualizado_em_and_more"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='agendamentoconsulta',
-            options={'ordering': ['-data_hora']},
+            name="agendamentoconsulta",
+            options={"ordering": ["-data_hora"]},
         ),
         migrations.AlterField(
-            model_name='agendamentoconsulta',
-            name='status',
-            field=models.CharField(choices=[('marcada', 'Marcada'), ('realizada', 'Realizada'), ('cancelada', 'Cancelada'), ('nao_realizada', 'Não Realizada')], default='marcada', max_length=15),
+            model_name="agendamentoconsulta",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("marcada", "Marcada"),
+                    ("realizada", "Realizada"),
+                    ("cancelada", "Cancelada"),
+                    ("nao_realizada", "Não Realizada"),
+                ],
+                default="marcada",
+                max_length=15,
+            ),
         ),
     ]

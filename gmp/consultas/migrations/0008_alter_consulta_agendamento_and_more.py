@@ -7,18 +7,29 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('consultas', '0007_agendamentoconsulta_consultas_a_medico__250052_idx_and_more'),
+        (
+            "consultas",
+            "0007_agendamentoconsulta_consultas_a_medico__250052_idx_and_more",
+        ),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='consulta',
-            name='agendamento',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.PROTECT, related_name='consulta', to='consultas.agendamentoconsulta'),
+            model_name="consulta",
+            name="agendamento",
+            field=models.OneToOneField(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="consulta",
+                to="consultas.agendamentoconsulta",
+            ),
         ),
         migrations.AlterField(
-            model_name='consultalog',
-            name='consulta',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='logs', to='consultas.agendamentoconsulta'),
+            model_name="consultalog",
+            name="consulta",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="logs",
+                to="consultas.agendamentoconsulta",
+            ),
         ),
     ]

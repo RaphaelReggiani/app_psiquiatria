@@ -36,7 +36,9 @@ MSG_VALIDATION_ERROR_CAMPOS_OBRIGATORIOS = "Preencha todos os campos obrigatóri
 # ==============================
 
 MSG_INVALID_ROLE_ASSIGNMENT_MEDICO = "Médicos só podem criar pacientes."
-MSG_INVALID_ROLE_ASSIGNMENT_NOT_SUPERADM = "Você não tem permissão para criar este tipo de usuário."
+MSG_INVALID_ROLE_ASSIGNMENT_NOT_SUPERADM = (
+    "Você não tem permissão para criar este tipo de usuário."
+)
 
 # ==============================
 # UNAUTHORIZEDROLECHANGE ERRORS

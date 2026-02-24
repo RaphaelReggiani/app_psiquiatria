@@ -1,49 +1,47 @@
 from rest_framework.permissions import BasePermission
 
+from gmp.usuarios.models import CustomUser
 
-class IsSuperAdmin(BasePermission):
+
+class IsAuthenticatedBase(BasePermission):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated)
+
+
+class IsSuperAdmin(IsAuthenticatedBase):
 
     def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated and request.user.role == 'superadm'
+        if not super().has_permission(request, view):
+            return False
+
+        return request.user.role == CustomUser.ROLE_SUPERADM
 
 
-class IsUserOwnerOrSuperAdmin(BasePermission):
-
-    def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated
+class IsUserOwnerOrSuperAdmin(IsAuthenticatedBase):
 
     def has_object_permission(self, request, view, obj):
-        if request.user.role == 'superadm':
+        if request.user.role == CustomUser.ROLE_SUPERADM:
             return True
         return obj == request.user
 
 
-class IsAgendamentoOwnerOrSuperAdmin(BasePermission):
-
-    def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated
+class IsAgendamentoOwnerOrSuperAdmin(IsAuthenticatedBase):
 
     def has_object_permission(self, request, view, obj):
         user = request.user
 
-        if user.role == 'superadm':
+        if user.role == CustomUser.ROLE_SUPERADM:
             return True
 
         return obj.paciente == user or obj.medico == user
 
 
-class IsConsultaOwnerOrSuperAdmin(BasePermission):
-
-    def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated
+class IsConsultaOwnerOrSuperAdmin(IsAuthenticatedBase):
 
     def has_object_permission(self, request, view, obj):
         user = request.user
 
-        if user.role == 'superadm':
+        if user.role == CustomUser.ROLE_SUPERADM:
             return True
 
-        return (
-            obj.agendamento.paciente == user or
-            obj.agendamento.medico == user
-        )
+        return obj.agendamento.paciente == user or obj.agendamento.medico == user

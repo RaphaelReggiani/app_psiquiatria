@@ -7,17 +7,21 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('consultas', '0008_alter_consulta_agendamento_and_more'),
+        ("consultas", "0008_alter_consulta_agendamento_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name='agendamentoconsulta',
-            index=models.Index(fields=['medico', 'data_hora'], name='consultas_a_medico__f620bc_idx'),
+            model_name="agendamentoconsulta",
+            index=models.Index(
+                fields=["medico", "data_hora"], name="consultas_a_medico__f620bc_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='agendamentoconsulta',
-            index=models.Index(fields=['paciente', 'data_hora'], name='consultas_a_pacient_1684e8_idx'),
+            model_name="agendamentoconsulta",
+            index=models.Index(
+                fields=["paciente", "data_hora"], name="consultas_a_pacient_1684e8_idx"
+            ),
         ),
     ]

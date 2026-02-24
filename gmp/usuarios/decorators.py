@@ -1,14 +1,11 @@
 from functools import wraps
-from django.shortcuts import redirect
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect
 
+from .constants import MSG_ERRO_ACESSO_RESTRITO, URL_HOME, URL_LOGIN
 from .models import CustomUser
-from .constants import (
-    URL_LOGIN,
-    URL_HOME,
-    MSG_ERRO_ACESSO_RESTRITO,
-)
 
 
 def role_required(*allowed_roles):
@@ -24,6 +21,7 @@ def role_required(*allowed_roles):
             return view_func(request, *args, **kwargs)
 
         return wrapper
+
     return decorator
 
 
@@ -35,8 +33,5 @@ def superadmin_required(view_func):
 
 def medico_or_superadmin_required(view_func):
     return login_required(login_url=URL_LOGIN)(
-        role_required(
-            CustomUser.ROLE_MEDICO,
-            CustomUser.ROLE_SUPERADM
-        )(view_func)
+        role_required(CustomUser.ROLE_MEDICO, CustomUser.ROLE_SUPERADM)(view_func)
     )

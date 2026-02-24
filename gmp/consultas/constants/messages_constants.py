@@ -21,11 +21,15 @@ MSG_ERRO_CRM_DESCRICAO_OBRIGATORIOS = "CRM e descrição são obrigatórios."
 MSG_ERRO_MEDICO_NAO_PODE_MARCAR = "Médicos não podem marcar consultas."
 MSG_ERRO_PREENCHER_TODOS_CAMPOS = "Preencha todos os campos."
 MSG_ERRO_FINAL_DE_SEMANA = "Consultas não são permitidas aos finais de semana."
-MSG_ERRO_LIMITE_DIARIO_MEDICO = "Este médico atingiu o limite de consultas para este dia."
+MSG_ERRO_LIMITE_DIARIO_MEDICO = (
+    "Este médico atingiu o limite de consultas para este dia."
+)
 MSG_ERRO_JA_POSSUI_CONSULTA_FUTURA = "Você já possui uma consulta futura marcada."
 MSG_ERRO_ANTECEDENCIA_MINIMA = "Horário inválido. Escolha um horário futuro com pelo menos 2 horas de antecedência."
 MSG_ERRO_HORARIO_OCUPADO = "Este horário já está ocupado."
-MSG_ERRO_JA_POSSUI_CONSULTA_NO_HORARIO = "Você já possui uma consulta marcada neste horário."
+MSG_ERRO_JA_POSSUI_CONSULTA_NO_HORARIO = (
+    "Você já possui uma consulta marcada neste horário."
+)
 MSG_ERRO_AGENDAMENTO_FINALIZADO_DELETE = "Agendamento finalizado não pode ser deletado."
 MSG_ERRO_CONSULTA_NAO_PODE_SER_DELETADA = "Consulta não pode ser deletada."
 MSG_ERRO_CONSULTA = "Ocorreu um erro relacionado à consulta."
@@ -35,7 +39,9 @@ MSG_ERRO_CONSULTA_NAO_REALIZADA = "A consulta ainda não foi realizada."
 MSG_ERRO_CONSULTA_JA_CANCELADA = "A consulta já foi cancelada."
 MSG_ERRO_CONSULTA_NAO_ENCONTRADA = "Consulta não encontrada."
 MSG_ERRO_CANCELAR_CONSULTA_SERVICE = "Apenas consultas marcadas podem ser canceladas."
-MSG_ERRO_REGISTRAR_CONSULTA_SERVICE = "Somente consultas marcadas podem ser registradas."
+MSG_ERRO_REGISTRAR_CONSULTA_SERVICE = (
+    "Somente consultas marcadas podem ser registradas."
+)
 
 
 # =========================
@@ -52,6 +58,5 @@ MSG_INFO_SEM_PACIENTES_QUEIXA = "Nenhum paciente encontrado com essa queixa."
 
 EMAIL_ASSUNTO_CONSULTA_CONFIRMADA = "Consulta confirmada"
 EMAIL_MENSAGEM_CONSULTA_CONFIRMADA = (
-    "Sua consulta foi marcada para {data_hora} "
-    "com o médico {medico}."
+    "Sua consulta foi marcada para {data_hora} " "com o médico {medico}."
 )

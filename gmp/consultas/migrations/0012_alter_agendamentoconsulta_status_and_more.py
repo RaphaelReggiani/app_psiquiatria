@@ -6,28 +6,65 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('consultas', '0011_alter_consultalog_status_anterior_and_more'),
+        ("consultas", "0011_alter_consultalog_status_anterior_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='agendamentoconsulta',
-            name='status',
-            field=models.CharField(choices=[('Marcada', 'Marcada'), ('Realizada', 'Realizada'), ('Cancelada', 'Cancelada'), ('Não Realizada', 'Não Realizada')], db_index=True, default='Marcada', max_length=20),
+            model_name="agendamentoconsulta",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("Marcada", "Marcada"),
+                    ("Realizada", "Realizada"),
+                    ("Cancelada", "Cancelada"),
+                    ("Não Realizada", "Não Realizada"),
+                ],
+                db_index=True,
+                default="Marcada",
+                max_length=20,
+            ),
         ),
         migrations.AlterField(
-            model_name='consulta',
-            name='condicao_paciente',
-            field=models.CharField(choices=[('Estável', 'Estável'), ('Instável', 'Instável'), ('Crítica', 'Crítica')], max_length=15),
+            model_name="consulta",
+            name="condicao_paciente",
+            field=models.CharField(
+                choices=[
+                    ("Estável", "Estável"),
+                    ("Instável", "Instável"),
+                    ("Crítica", "Crítica"),
+                ],
+                max_length=15,
+            ),
         ),
         migrations.AlterField(
-            model_name='consultalog',
-            name='status_anterior',
-            field=models.CharField(choices=[('Inicial', 'Inicial'), ('Marcada', 'Marcada'), ('Realizada', 'Realizada'), ('Cancelada', 'Cancelada'), ('Não Realizada', 'Não Realizada'), ('Receita Gerada', 'Receita Gerada')], max_length=20),
+            model_name="consultalog",
+            name="status_anterior",
+            field=models.CharField(
+                choices=[
+                    ("Inicial", "Inicial"),
+                    ("Marcada", "Marcada"),
+                    ("Realizada", "Realizada"),
+                    ("Cancelada", "Cancelada"),
+                    ("Não Realizada", "Não Realizada"),
+                    ("Receita Gerada", "Receita Gerada"),
+                ],
+                max_length=20,
+            ),
         ),
         migrations.AlterField(
-            model_name='consultalog',
-            name='status_novo',
-            field=models.CharField(choices=[('Inicial', 'Inicial'), ('Marcada', 'Marcada'), ('Realizada', 'Realizada'), ('Cancelada', 'Cancelada'), ('Não Realizada', 'Não Realizada'), ('Receita Gerada', 'Receita Gerada')], max_length=20),
+            model_name="consultalog",
+            name="status_novo",
+            field=models.CharField(
+                choices=[
+                    ("Inicial", "Inicial"),
+                    ("Marcada", "Marcada"),
+                    ("Realizada", "Realizada"),
+                    ("Cancelada", "Cancelada"),
+                    ("Não Realizada", "Não Realizada"),
+                    ("Receita Gerada", "Receita Gerada"),
+                ],
+                max_length=20,
+            ),
         ),
     ]

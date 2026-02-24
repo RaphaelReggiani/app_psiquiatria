@@ -1,9 +1,12 @@
-import pytest
-from django.urls import reverse
-from gmp.consultas.models import Consulta, AgendamentoConsulta
-from django.utils import timezone
 import datetime
+
+import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.urls import reverse
+from django.utils import timezone
+
+from api.constants import API_RECEITA_MAX_SIZE
+from gmp.consultas.models import AgendamentoConsulta, Consulta
 
 
 @pytest.mark.django_db
@@ -11,9 +14,7 @@ class TestConsulta:
 
     def test_medico_cria_consulta(self, api_client, medico, paciente):
 
-        data_hora = timezone.make_aware(
-            datetime.datetime(2030, 1, 1, 10, 0, 0)
-        )
+        data_hora = timezone.make_aware(datetime.datetime(2030, 1, 1, 10, 0, 0))
 
         agendamento = AgendamentoConsulta.objects.create(
             paciente=paciente,
@@ -50,19 +51,21 @@ class TestConsulta:
         assert consulta.agendamento == agendamento
         assert consulta.descricao == "Consulta teste"
 
-
     def test_paciente_nao_pode_criar_consulta(self, api_client, paciente):
 
         api_client.force_authenticate(user=paciente)
 
         url = reverse("consultas-list")
 
-        response = api_client.post(url, {
-            "agendamento": 1,
-            "condicao_paciente": Consulta.CONDICAO_PACIENTE_ESTAVEL,
-            "descricao": "Tentativa inválida",
-            "receita": "Nenhuma",
-        })
+        response = api_client.post(
+            url,
+            {
+                "agendamento": 1,
+                "condicao_paciente": Consulta.CONDICAO_PACIENTE_ESTAVEL,
+                "descricao": "Tentativa inválida",
+                "receita": "Nenhuma",
+            },
+        )
 
         assert response.status_code == 400
         assert Consulta.objects.count() == 0
@@ -71,9 +74,7 @@ class TestConsulta:
         self, api_client, medico, paciente
     ):
 
-        data_hora = timezone.make_aware(
-            datetime.datetime(2030, 1, 1, 10, 0, 0)
-        )
+        data_hora = timezone.make_aware(datetime.datetime(2030, 1, 1, 10, 0, 0))
 
         agendamento = AgendamentoConsulta.objects.create(
             paciente=paciente,
@@ -86,12 +87,15 @@ class TestConsulta:
 
         url = reverse("consultas-list")
 
-        response = api_client.post(url, {
-            "agendamento": agendamento.id,
-            "condicao_paciente": Consulta.CONDICAO_PACIENTE_ESTAVEL,
-            "descricao": "Erro esperado",
-            "receita": "Nenhuma",
-        })
+        response = api_client.post(
+            url,
+            {
+                "agendamento": agendamento.id,
+                "condicao_paciente": Consulta.CONDICAO_PACIENTE_ESTAVEL,
+                "descricao": "Erro esperado",
+                "receita": "Nenhuma",
+            },
+        )
 
         assert response.status_code == 400
         assert Consulta.objects.count() == 0
@@ -105,9 +109,7 @@ class TestConsulta:
             role="medico",
         )
 
-        data_hora = timezone.make_aware(
-            datetime.datetime(2030, 1, 1, 10, 0, 0)
-        )
+        data_hora = timezone.make_aware(datetime.datetime(2030, 1, 1, 10, 0, 0))
 
         agendamento = AgendamentoConsulta.objects.create(
             paciente=paciente,
@@ -141,9 +143,7 @@ class TestConsulta:
     def test_nao_pode_criar_duas_consultas_para_mesmo_agendamento(
         self, api_client, medico, paciente
     ):
-        data_hora = timezone.make_aware(
-            datetime.datetime(2030, 1, 1, 10, 0, 0)
-        )
+        data_hora = timezone.make_aware(datetime.datetime(2030, 1, 1, 10, 0, 0))
 
         agendamento = AgendamentoConsulta.objects.create(
             paciente=paciente,
@@ -190,9 +190,7 @@ class TestConsulta:
     def test_nao_pode_criar_consulta_para_agendamento_no_passado(
         self, api_client, medico, paciente
     ):
-        data_passada = timezone.make_aware(
-            datetime.datetime(2020, 1, 1, 10, 0, 0)
-        )
+        data_passada = timezone.make_aware(datetime.datetime(2020, 1, 1, 10, 0, 0))
 
         agendamento = AgendamentoConsulta.objects.create(
             paciente=paciente,
@@ -222,12 +220,8 @@ class TestConsulta:
 
         assert response.status_code == 400
 
-    def test_upload_invalido_nao_pdf(
-        self, api_client, medico, paciente
-    ):
-        data_hora = timezone.make_aware(
-            datetime.datetime(2030, 1, 1, 10, 0, 0)
-        )
+    def test_upload_invalido_nao_pdf(self, api_client, medico, paciente):
+        data_hora = timezone.make_aware(datetime.datetime(2030, 1, 1, 10, 0, 0))
 
         agendamento = AgendamentoConsulta.objects.create(
             paciente=paciente,
@@ -260,9 +254,7 @@ class TestConsulta:
     def test_usuario_nao_autenticado_nao_pode_criar_consulta(
         self, api_client, medico, paciente
     ):
-        data_hora = timezone.make_aware(
-            datetime.datetime(2030, 1, 1, 10, 0, 0)
-        )
+        data_hora = timezone.make_aware(datetime.datetime(2030, 1, 1, 10, 0, 0))
 
         agendamento = AgendamentoConsulta.objects.create(
             paciente=paciente,
@@ -293,9 +285,7 @@ class TestConsulta:
     def test_nao_pode_criar_consulta_para_agendamento_cancelado(
         self, api_client, medico, paciente
     ):
-        data_hora = timezone.make_aware(
-            datetime.datetime(2030, 1, 1, 10, 0, 0)
-        )
+        data_hora = timezone.make_aware(datetime.datetime(2030, 1, 1, 10, 0, 0))
 
         agendamento = AgendamentoConsulta.objects.create(
             paciente=paciente,
@@ -325,12 +315,8 @@ class TestConsulta:
 
         assert response.status_code == 400
 
-    def test_consulta_nao_pode_ser_editada(
-        self, api_client, medico, paciente
-    ):
-        data_hora = timezone.make_aware(
-            datetime.datetime(2030, 1, 1, 10, 0, 0)
-        )
+    def test_consulta_nao_pode_ser_editada(self, api_client, medico, paciente):
+        data_hora = timezone.make_aware(datetime.datetime(2030, 1, 1, 10, 0, 0))
 
         agendamento = AgendamentoConsulta.objects.create(
             paciente=paciente,
@@ -370,9 +356,7 @@ class TestConsulta:
             role="paciente",
         )
 
-        data_hora = timezone.make_aware(
-            datetime.datetime(2030, 1, 1, 10, 0, 0)
-        )
+        data_hora = timezone.make_aware(datetime.datetime(2030, 1, 1, 10, 0, 0))
 
         agendamento = AgendamentoConsulta.objects.create(
             paciente=outro_paciente,
@@ -401,12 +385,8 @@ class TestConsulta:
         assert response.status_code == 200
         assert len(response.data) == 0
 
-    def test_upload_maior_que_limite(
-        self, api_client, medico, paciente
-    ):
-        data_hora = timezone.make_aware(
-            datetime.datetime(2030, 1, 1, 10, 0, 0)
-        )
+    def test_upload_maior_que_limite(self, api_client, medico, paciente):
+        data_hora = timezone.make_aware(datetime.datetime(2030, 1, 1, 10, 0, 0))
 
         agendamento = AgendamentoConsulta.objects.create(
             paciente=paciente,
@@ -417,7 +397,7 @@ class TestConsulta:
 
         arquivo_grande = SimpleUploadedFile(
             "receita.pdf",
-            b"x" * (6 * 1024 * 1024),  # 6MB
+            b"x" * (API_RECEITA_MAX_SIZE),
             content_type="application/pdf",
         )
 
@@ -435,9 +415,3 @@ class TestConsulta:
         )
 
         assert response.status_code == 400
-
-
-
-
-
-

@@ -1,42 +1,35 @@
+from datetime import datetime, time, timedelta
+
 from django import forms
 from django.utils import timezone
-from datetime import (
-    datetime, 
-    time, 
-    timedelta,
-)
-
-from gmp.usuarios.models import CustomUser
-
-from .models import (
-    Consulta, 
-    AgendamentoConsulta,
-)
 
 from gmp.consultas.constants import (
-    LIMITE_DIARIO_MEDICO, 
-    ANTECEDENCIA_MINIMA_HORAS, 
-    HORA_INICIO_ATENDIMENTO, 
-    HORA_FIM_ATENDIMENTO, 
-    INTERVALO_MINUTOS, 
-    DIA_UTIL_FINAL, 
+    ANTECEDENCIA_MINIMA_HORAS,
+    DIA_UTIL_FINAL,
     FORMATO_HORA,
-    LABEL_CONDICAO_PACIENTE,
-    LABEL_DESCRICAO_CONSULTA,
-    LABEL_RECEITA,
+    HORA_FIM_ATENDIMENTO,
+    HORA_INICIO_ATENDIMENTO,
+    INTERVALO_MINUTOS,
     LABEL_ARQUIVO,
-    LABEL_SELECIONE_MEDICO,
+    LABEL_CONDICAO_PACIENTE,
     LABEL_DATA_DA_CONSULTA,
+    LABEL_DESCRICAO_CONSULTA,
     LABEL_HORARIO,
+    LABEL_RECEITA,
+    LABEL_SELECIONE_MEDICO,
+    LIMITE_DIARIO_MEDICO,
+    MSG_ERRO_ANTECEDENCIA_MINIMA,
+    MSG_ERRO_FINAL_DE_SEMANA,
+    MSG_ERRO_HORARIO_OCUPADO,
+    MSG_ERRO_JA_POSSUI_CONSULTA_FUTURA,
+    MSG_ERRO_JA_POSSUI_CONSULTA_NO_HORARIO,
+    MSG_ERRO_LIMITE_DIARIO_MEDICO,
     MSG_ERRO_MEDICO_NAO_PODE_MARCAR,
     MSG_ERRO_PREENCHER_TODOS_CAMPOS,
-    MSG_ERRO_FINAL_DE_SEMANA,
-    MSG_ERRO_LIMITE_DIARIO_MEDICO,
-    MSG_ERRO_JA_POSSUI_CONSULTA_FUTURA,
-    MSG_ERRO_ANTECEDENCIA_MINIMA,
-    MSG_ERRO_HORARIO_OCUPADO,
-    MSG_ERRO_JA_POSSUI_CONSULTA_NO_HORARIO,
 )
+from gmp.usuarios.models import CustomUser
+
+from .models import AgendamentoConsulta, Consulta
 
 HORARIOS_ATENDIMENTO = [
     time(h, m)
@@ -44,43 +37,44 @@ HORARIOS_ATENDIMENTO = [
     for m in INTERVALO_MINUTOS
 ]
 
+
 class AgendamentoConsultaForm(forms.ModelForm):
 
-    paciente = forms.ModelChoiceField(
-        queryset=None,
-        required=False
-    )
+    paciente = forms.ModelChoiceField(queryset=None, required=False)
 
     data = forms.DateField(
-        label= LABEL_DATA_DA_CONSULTA,
+        label=LABEL_DATA_DA_CONSULTA,
         widget=forms.DateInput(
-            attrs={
-                'type': 'date',
-                'min': timezone.now().date().isoformat()
-            }
-        )
+            attrs={"type": "date", "min": timezone.now().date().isoformat()}
+        ),
     )
 
     hora = forms.ChoiceField(
-        label= LABEL_HORARIO,
-        choices=[(h.strftime(FORMATO_HORA), h.strftime(FORMATO_HORA)) for h in HORARIOS_ATENDIMENTO]
+        label=LABEL_HORARIO,
+        choices=[
+            (h.strftime(FORMATO_HORA), h.strftime(FORMATO_HORA))
+            for h in HORARIOS_ATENDIMENTO
+        ],
     )
 
     class Meta:
         model = AgendamentoConsulta
-        fields = ['paciente', 'medico', 'data', 'hora']
+        fields = ["paciente", "medico", "data", "hora"]
 
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)
+        self.user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
 
-
-        self.fields['paciente'].queryset = CustomUser.objects.filter(role=CustomUser.ROLE_PACIENTE)
-        self.fields['medico'].queryset = CustomUser.objects.filter(role=CustomUser.ROLE_MEDICO)
-        self.fields['medico'].empty_label = LABEL_SELECIONE_MEDICO
+        self.fields["paciente"].queryset = CustomUser.objects.filter(
+            role=CustomUser.ROLE_PACIENTE
+        )
+        self.fields["medico"].queryset = CustomUser.objects.filter(
+            role=CustomUser.ROLE_MEDICO
+        )
+        self.fields["medico"].empty_label = LABEL_SELECIONE_MEDICO
 
         if self.user and self.user.role == CustomUser.ROLE_PACIENTE:
-            self.fields['paciente'].widget = forms.HiddenInput()
+            self.fields["paciente"].widget = forms.HiddenInput()
 
     def clean(self):
 
@@ -89,10 +83,10 @@ class AgendamentoConsultaForm(forms.ModelForm):
         if self.user and self.user.role == CustomUser.ROLE_MEDICO:
             raise forms.ValidationError(MSG_ERRO_MEDICO_NAO_PODE_MARCAR)
 
-        data = cleaned.get('data')
-        hora_str = cleaned.get('hora')
-        medico = cleaned.get('medico')
-        paciente = cleaned.get('paciente')
+        data = cleaned.get("data")
+        hora_str = cleaned.get("hora")
+        medico = cleaned.get("medico")
+        paciente = cleaned.get("paciente")
 
         if not paciente and self.user and self.user.role == CustomUser.ROLE_PACIENTE:
             paciente = self.user
@@ -106,16 +100,16 @@ class AgendamentoConsultaForm(forms.ModelForm):
         total = AgendamentoConsulta.objects.filter(
             medico=medico,
             data_hora__date=data,
-            status=AgendamentoConsulta.STATUS_MARCADA
+            status=AgendamentoConsulta.STATUS_MARCADA,
         ).count()
 
         if total >= LIMITE_DIARIO_MEDICO:
             raise forms.ValidationError(MSG_ERRO_LIMITE_DIARIO_MEDICO)
-        
+
         if AgendamentoConsulta.objects.filter(
             paciente=paciente,
             data_hora__gt=timezone.now(),
-            status=AgendamentoConsulta.STATUS_MARCADA
+            status=AgendamentoConsulta.STATUS_MARCADA,
         ).exists():
             raise forms.ValidationError(MSG_ERRO_JA_POSSUI_CONSULTA_FUTURA)
 
@@ -125,31 +119,33 @@ class AgendamentoConsultaForm(forms.ModelForm):
         agora = timezone.now()
         minimo = agora + timedelta(hours=ANTECEDENCIA_MINIMA_HORAS)
         if data_hora < minimo:
-            raise forms.ValidationError(MSG_ERRO_ANTECEDENCIA_MINIMA.format(horas=ANTECEDENCIA_MINIMA_HORAS))
+            raise forms.ValidationError(
+                MSG_ERRO_ANTECEDENCIA_MINIMA.format(horas=ANTECEDENCIA_MINIMA_HORAS)
+            )
 
         if AgendamentoConsulta.objects.filter(
             medico=medico,
             data_hora=data_hora,
-            status=AgendamentoConsulta.STATUS_MARCADA
+            status=AgendamentoConsulta.STATUS_MARCADA,
         ).exists():
             raise forms.ValidationError(MSG_ERRO_HORARIO_OCUPADO)
 
         if AgendamentoConsulta.objects.filter(
             paciente=paciente,
             data_hora=data_hora,
-            status=AgendamentoConsulta.STATUS_MARCADA
+            status=AgendamentoConsulta.STATUS_MARCADA,
         ).exists():
             raise forms.ValidationError(MSG_ERRO_JA_POSSUI_CONSULTA_NO_HORARIO)
 
-        cleaned['data_hora'] = data_hora
-        cleaned['paciente'] = paciente
+        cleaned["data_hora"] = data_hora
+        cleaned["paciente"] = paciente
 
         return cleaned
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-        instance.data_hora = self.cleaned_data['data_hora']
-        instance.paciente = self.cleaned_data['paciente']
+        instance.data_hora = self.cleaned_data["data_hora"]
+        instance.paciente = self.cleaned_data["paciente"]
 
         if commit:
             instance.save()
@@ -161,21 +157,12 @@ class ConsultaForm(forms.ModelForm):
 
     class Meta:
         model = Consulta
-        fields = [
-            'condicao_paciente',
-            'descricao',
-            'receita',
-            'arquivo'
-        ]
+        fields = ["condicao_paciente", "descricao", "receita", "arquivo"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.fields['condicao_paciente'].label = LABEL_CONDICAO_PACIENTE
-        self.fields['descricao'].label = LABEL_DESCRICAO_CONSULTA
-        self.fields['receita'].label = LABEL_RECEITA
-        self.fields['arquivo'].label = LABEL_ARQUIVO
-
-
-
-
+        self.fields["condicao_paciente"].label = LABEL_CONDICAO_PACIENTE
+        self.fields["descricao"].label = LABEL_DESCRICAO_CONSULTA
+        self.fields["receita"].label = LABEL_RECEITA
+        self.fields["arquivo"].label = LABEL_ARQUIVO

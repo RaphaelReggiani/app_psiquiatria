@@ -6,5 +6,5 @@ def registrar_log(consulta, usuario, status_anterior, status_novo):
         consulta=consulta,
         usuario=usuario,
         status_anterior=status_anterior,
-        status_novo=status_novo
+        status_novo=status_novo,
     )
