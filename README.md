@@ -1,6 +1,6 @@
 # GMP
 
-![Python](https://img.shields.io/badge/Python-3.12-blue?style=flat)
+![Python](https://img.shields.io/badge/Python-3.13-blue?style=flat)
 ![Django](https://img.shields.io/badge/Django-4.2-green?style=flat)
 ![DRF](https://img.shields.io/badge/DRF-3.14-red?style=flat)
 
