@@ -22,10 +22,11 @@ python manage.py runserver
 
 ## Estrutura do Projeto
 
+```bash
 gmp/
 ├── core/
 │   ├── settings.py
-│   ├── urls.py
+│   └── urls.py
 │
 ├── usuarios/
 │   ├── urls.py
@@ -35,11 +36,11 @@ gmp/
 │   ├── pw_reset.py
 │   ├── exceptions.py
 │   ├── decorators.py
-├── usuarios/constants/
-│       ├── constants.py
-│       ├── messages_constants.py
-├── usuarios/services/
-│       ├── user_services.py
+│   ├── constants/
+│   │   ├── constants.py
+│   │   └── messages_constants.py
+│   └── services/
+│       └── user_services.py
 │
 ├── consultas/
 │   ├── urls.py
@@ -49,15 +50,15 @@ gmp/
 │   ├── selectors.py
 │   ├── exceptions.py
 │   ├── decorators.py
-├── consultas/constants/
-│       ├── constants.py
-│       ├── messages_constants.py
-├── consultas/services/
+│   ├── constants/
+│   │   ├── constants.py
+│   │   └── messages_constants.py
+│   └── services/
 │       ├── cache_service.py
 │       ├── consulta_service.py
 │       ├── horarios_service.py
 │       ├── log_service.py
-│       ├── receita_service.py
+│       └── receita_service.py
 │
 ├── api/
 │   ├── urls.py
@@ -65,12 +66,12 @@ gmp/
 │   ├── serializers.py
 │   ├── permissions.py
 │   ├── apps.py
-├── api/tests/
+│   └── tests/
 │       ├── conftest.py
 │       ├── test_agendamentos.py
 │       ├── test_consultas.py
-│       ├── test_users.py
-
+│       └── test_users.py
+```
 
 ## Stack Utilizada
 
@@ -174,7 +175,7 @@ Cada role possui restrições específicas controladas no backend.
 ## Imagens da Aplicação
 
 
-**Geral**
+**GERAL**
 
 
 ### HOME PAGE - Sem login
@@ -199,7 +200,7 @@ Cada role possui restrições específicas controladas no backend.
 ![Redefinição de senha - Email](readme_assets/geral/redefinir_senha_email_enviado_page.png)
 
 
-**Paciente**
+**PACIENTE**
 
 
 ### HOME PAGE - Usuário Paciente logado
@@ -221,7 +222,7 @@ Cada role possui restrições específicas controladas no backend.
 ![Minhas Consultas - Paciente - Consulta Cancelada](readme_assets/paciente/minhas_consultas_paciente_cancelada_page.png)
 
 
-**Médico**
+**MÉDICO**
 
 
 ### HOME PAGE - Usuário Médico logado
