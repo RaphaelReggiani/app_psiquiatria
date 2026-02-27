@@ -77,7 +77,6 @@ templates/
 ├── main.html
 ```
 
-
 ## Stack Utilizada
 
 - Python 3.13.4;
