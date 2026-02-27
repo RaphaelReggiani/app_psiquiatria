@@ -134,7 +134,6 @@ Cada role possui restrições específicas controladas no backend.
 
 ## Funcionalidades
 
-
 GERAL
 
 - Cadastramento de usuários, separados por roles com limitações de permissões, sendo elas: Médico, Paciente e Staff / SuperADM;
@@ -144,7 +143,6 @@ GERAL
 - Funcionalidade de redefinição de senha, realizada através de envio de um e-mail para a redefinição de senha, com token de autenticação;
 - Seção de Sobre Nós e Contato / Suporte;
 - LOGs de todas as ações realizadas na aplicação.
-
 
 
 UX USUÁRIOS
