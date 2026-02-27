@@ -40,7 +40,8 @@ gmp/
 │   │   ├── constants.py
 │   │   └── messages_constants.py
 │   └── services/
-│       └── user_services.py
+│   │    └── user_services.py
+│   └── templates/...
 │
 ├── consultas/
 │   ├── urls.py
@@ -54,11 +55,12 @@ gmp/
 │   │   ├── constants.py
 │   │   └── messages_constants.py
 │   └── services/
-│       ├── cache_service.py
-│       ├── consulta_service.py
-│       ├── horarios_service.py
-│       ├── log_service.py
-│       └── receita_service.py
+│   │    ├── cache_service.py
+│   │    ├── consulta_service.py
+│   │    ├── horarios_service.py
+│   │    ├── log_service.py
+│   │    └── receita_service.py
+│   └── templates/...
 │
 ├── api/
 │   ├── urls.py
@@ -71,6 +73,8 @@ gmp/
 │       ├── test_agendamentos.py
 │       ├── test_consultas.py
 │       └── test_users.py
+templates/
+├── main.html
 ```
 
 ## Stack Utilizada
