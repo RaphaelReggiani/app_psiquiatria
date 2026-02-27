@@ -134,7 +134,8 @@ Cada role possui restrições específicas controladas no backend.
 
 ## Funcionalidades
 
-* Geral
+
+GERAL
 
 - Cadastramento de usuários, separados por roles com limitações de permissões, sendo elas: Médico, Paciente e Staff / SuperADM;
 - Cadastramento de membros com role médico e staff, limitado apenas aos SuperADMs;
@@ -145,7 +146,8 @@ Cada role possui restrições específicas controladas no backend.
 - LOGs de todas as ações realizadas na aplicação.
 
 
-* UX Usuários
+
+UX USUÁRIOS
 
 **UX Paciente**
 
